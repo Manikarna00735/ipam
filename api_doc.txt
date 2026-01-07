@@ -1,0 +1,271 @@
+IPAM Backend API Spec (Node.js) — Firebase Parity (FULL)
+Scope: Circuits, Providers, Sites, Regions, Locations, Racks, VLANs, VRFs, Prefixes, Subnets, IPs, Devices, Interfaces, Manufacturers, Platforms, Wireless
+
+1. Global Rules (Apply to ALL endpoints)
+Authentication
+•	Authorization: Bearer <token>
+•	user_id must be derived from token
+Org Scoping
+•	Header: X-Org-Id
+•	LIST/GET → where(orgId == X-Org-Id)
+•	UPDATE/DELETE → read first, if org mismatch return 403
+Server Managed Fields
+•	CREATE → orgId, user_id, createdAt, updatedAt
+•	UPDATE → updatedAt only
+Slug Uniqueness per Org
+•	Providers, Sites, Regions, Racks, Manufacturers, Platforms
+2. Prefixes / Subnets / IPs (Hierarchical Core IPAM)
+Firestore Structure: prefixes/{prefixId}/subnets/{subnetId}/ips/{ipId}
+Hierarchy Rules
+•	Prefix → Subnets → IPs
+•	Subnet must belong to Prefix CIDR
+•	IP must belong to Subnet CIDR
+•	Prevent duplicate IP in same Subnet
+•	On Subnet create/delete → update prefix.children
+•	IP list sorted ascending
+Endpoints
+•	POST /api/ipam/prefixes
+•	GET /api/ipam/prefixes
+•	PUT /api/ipam/prefixes/:id
+•	DELETE /api/ipam/prefixes/:id
+•	POST /api/ipam/prefixes/:id/subnets
+•	GET /api/ipam/prefixes/:id/subnets
+•	PUT /api/ipam/prefixes/:id/subnets/:subnetId
+•	DELETE /api/ipam/prefixes/:id/subnets/:subnetId
+•	POST /api/ipam/prefixes/:id/subnets/:subnetId/ips
+•	POST /api/ipam/prefixes/:id/subnets/:subnetId/ips/batch
+•	GET /api/ipam/prefixes/:id/subnets/:subnetId/ips
+•	PUT /api/ipam/prefixes/:id/subnets/:subnetId/ips/:ipId
+•	DELETE /api/ipam/prefixes/:id/subnets/:subnetId/ips/:ipId
+Required Fields
+•	Prefix: status, prefix, vrf, tenant, site, vlan, role
+•	Subnet: subnet, status, vrf, tenant, site, vlan, role
+•	IP: ip
+3. VRFs
+Firestore Collection: VRFs
+REST Endpoints:
+•	POST /api/ipam/vrfs
+•	GET /api/ipam/vrfs
+•	GET /api/ipam/vrfs/:id
+•	PUT /api/ipam/vrfs/:id
+•	DELETE /api/ipam/vrfs/:id
+Required Fields (keys MUST match frontend):
+•	vfsId
+•	name
+Optional Fields:
+•	description
+•	tag
+•	importTarget
+•	exportTarget
+•	tenantGroup
+•	tenant
+•	comment
+4. VLANs
+Firestore Collection: VLANs
+REST Endpoints:
+•	POST /api/ipam/vlans
+•	GET /api/ipam/vlans
+•	GET /api/ipam/vlans/:id
+•	PUT /api/ipam/vlans/:id
+•	DELETE /api/ipam/vlans/:id
+Required Fields (keys MUST match frontend):
+•	vId
+•	name
+•	status
+Optional Fields:
+•	description
+•	tag
+•	comment
+•	role
+•	tenant
+•	tenantGroup
+•	vlanGroup
+5. Circuits
+Firestore Collection: Circuits
+REST Endpoints:
+•	POST /api/ipam/circuits
+•	GET /api/ipam/circuits
+•	GET /api/ipam/circuits/:id
+•	PUT /api/ipam/circuits/:id
+•	DELETE /api/ipam/circuits/:id
+Required Fields (keys MUST match frontend):
+•	circuitId
+•	provider
+•	type
+•	status
+•	sideA
+Optional Fields:
+•	tenantGroup
+•	tenant
+•	sideZ
+•	customerIp
+•	gatewayIp
+•	tags
+•	comments
+6. Providers
+Firestore Collection: providers
+REST Endpoints:
+•	POST /api/ipam/providers
+•	GET /api/ipam/providers
+•	GET /api/ipam/providers/:id
+•	PUT /api/ipam/providers/:id
+•	DELETE /api/ipam/providers/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	slug
+Optional Fields:
+•	asnsCsv
+•	description
+•	tagsCsv
+•	comments
+7. Sites
+Firestore Collection: Sites
+REST Endpoints:
+•	POST /api/ipam/sites
+•	GET /api/ipam/sites
+•	GET /api/ipam/sites/:id
+•	PUT /api/ipam/sites/:id
+•	DELETE /api/ipam/sites/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	slug
+•	status
+Optional Fields:
+•	region
+•	facility
+•	tenant
+•	tagsCsv
+•	location
+8. Locations
+Firestore Collection: locations
+REST Endpoints:
+•	POST /api/ipam/locations
+•	GET /api/ipam/locations
+•	GET /api/ipam/locations/:id
+•	PUT /api/ipam/locations/:id
+•	DELETE /api/ipam/locations/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	slug
+•	status
+•	site
+Optional Fields:
+•	parentId
+•	description
+•	tagsCsv
+•	tenant
+9. Regions
+Firestore Collection: Regions
+REST Endpoints:
+•	POST /api/ipam/regions
+•	GET /api/ipam/regions
+•	GET /api/ipam/regions/:id
+•	PUT /api/ipam/regions/:id
+•	DELETE /api/ipam/regions/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	slug
+Optional Fields:
+•	description
+•	parentId
+•	parentName
+•	tagsCsv
+10. Racks
+Firestore Collection: racks
+REST Endpoints:
+•	POST /api/ipam/racks
+•	GET /api/ipam/racks
+•	GET /api/ipam/racks/:id
+•	PUT /api/ipam/racks/:id
+•	DELETE /api/ipam/racks/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	slug
+•	status
+•	site
+Optional Fields:
+•	location
+•	tenant
+•	devices
+11. Devices
+Firestore Collection: Devices
+REST Endpoints:
+•	POST /api/ipam/devices
+•	GET /api/ipam/devices
+•	GET /api/ipam/devices/:id
+•	PUT /api/ipam/devices/:id
+•	DELETE /api/ipam/devices/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	deviceRole
+•	deviceType
+•	site
+Optional Fields:
+•	rack
+•	manufacturer
+•	platform
+•	tenant
+•	services
+12. Interfaces
+Firestore Collection: Interface
+REST Endpoints:
+•	POST /api/ipam/interfaces
+•	GET /api/ipam/interfaces
+•	GET /api/ipam/interfaces/:id
+•	PUT /api/ipam/interfaces/:id
+•	DELETE /api/ipam/interfaces/:id
+Required Fields (keys MUST match frontend):
+•	device
+•	name
+•	type
+Optional Fields:
+•	speed
+•	duplex
+•	vRF
+•	mac
+•	tags
+13. Manufacturers
+Firestore Collection: Manufacturers
+REST Endpoints:
+•	POST /api/ipam/manufacturers
+•	GET /api/ipam/manufacturers
+•	GET /api/ipam/manufacturers/:id
+•	PUT /api/ipam/manufacturers/:id
+•	DELETE /api/ipam/manufacturers/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	slug
+Optional Fields:
+•	description
+•	tags
+14. Platforms
+Firestore Collection: Platform
+REST Endpoints:
+•	POST /api/ipam/platforms
+•	GET /api/ipam/platforms
+•	GET /api/ipam/platforms/:id
+•	PUT /api/ipam/platforms/:id
+•	DELETE /api/ipam/platforms/:id
+Required Fields (keys MUST match frontend):
+•	name
+•	slug
+Optional Fields:
+•	manufacturer
+•	napalmDriver
+•	description
+15. Wireless
+Firestore Collection: Wireless
+REST Endpoints:
+•	POST /api/ipam/wireless
+•	GET /api/ipam/wireless
+•	GET /api/ipam/wireless/:id
+•	PUT /api/ipam/wireless/:id
+•	DELETE /api/ipam/wireless/:id
+Required Fields (keys MUST match frontend):
+•	ssId
+•	status
+Optional Fields:
+•	group
+•	vLAN
+•	tenant
+•	interfaces
