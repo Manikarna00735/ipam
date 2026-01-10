@@ -1,12 +1,12 @@
 function requireOrg(req, res, next) {
   const orgId = req.headers['x-org-id'];
   if (!orgId) return res.status(400).json({ error: 'X-Org-Id header required' });
-  req.orgId = orgId;
+  req.org_uuid = orgId;
   next();
 }
 
 function ensureOrgMatches(rowOrgId, req, res) {
-  if (!rowOrgId || rowOrgId !== req.orgId) {
+  if (!rowOrgId || rowOrgId !== req.org_uuid) {
     res.status(403).json({ error: 'org mismatch' });
     return false;
   }
