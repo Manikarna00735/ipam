@@ -65,3 +65,28 @@ CREATE TABLE IF NOT EXISTS regions (
   updatedAt TIMESTAMP WITH TIME zone,
   user_uuid uuid 
 )
+
+-- create sites table
+CREATE TABLE IF NOT EXISTS sites (
+  uuid uuid PRIMARY key default gen_random_uuid(),
+  name text not null,
+  slug text not null,
+  "group" text,
+  description text,
+  asn text,
+  tagscsv text,
+  tenant text,
+  tenantgroup text,
+  timezone text,
+  region text,
+  location text,
+  facility text,
+  physicaladdress text,
+  shippingaddress text,
+  orgid varchar(128),
+  comments text,
+  status boolean,
+  createdAt TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updatedAt TIMESTAMP WITH TIME zone,
+  user_id varchar(128) 
+)

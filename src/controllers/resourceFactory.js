@@ -5,7 +5,7 @@ const realtime = require('../realtime');
 function resourceFactory({ table, requiredFields = [], slugUnique = false }) {
   async function list(req, res, next) {
     try {
-      const rows = (await db.query(`SELECT * FROM ${table} WHERE org_id = $1 ORDER BY id`, [req.orgId])).rows;
+      const rows = (await db.query(`SELECT * FROM ${table} WHERE org_id = $1 ORDER BY id`, [req.orgid])).rows;
       res.json({ items: rows });
     } catch (err) {
       next(err);
@@ -29,14 +29,14 @@ function resourceFactory({ table, requiredFields = [], slugUnique = false }) {
       for (const f of requiredFields) if (payload[f] === undefined) return res.status(400).json({ error: `${f} required` });
 
       if (slugUnique && payload.slug) {
-        const ex = await db.query(`SELECT id FROM ${table} WHERE slug = $1 AND org_id = $2`, [payload.slug, req.orgId]);
+        const ex = await db.query(`SELECT id FROM ${table} WHERE slug = $1 AND org_id = $2`, [payload.slug, req.orgid]);
         if (ex.rows.length) return res.status(409).json({ error: 'slug already exists' });
       }
 
       const cols = ['org_id', 'created_by', 'created_at', 'updated_at'].concat(Object.keys(payload));
       // remove duplicates
       const uniqueCols = [...new Set(cols)];
-      const values = [req.orgId, req.user ? req.user.id : null, new Date(), new Date()].concat(Object.values(payload));
+      const values = [req.orgid, req.user ? req.user.user_id : null, new Date(), new Date()].concat(Object.values(payload));
       const placeholders = uniqueCols.map((_, i) => `$${i+1}`).join(', ');
       const insertCols = uniqueCols.join(', ');
       const sql = `INSERT INTO ${table} (${insertCols}) VALUES (${placeholders}) RETURNING *`;
@@ -57,7 +57,7 @@ function resourceFactory({ table, requiredFields = [], slugUnique = false }) {
 
       const payload = req.body || {};
       if (slugUnique && payload.slug) {
-        const ex = await db.query(`SELECT id FROM ${table} WHERE slug = $1 AND org_id = $2 AND id != $3`, [payload.slug, req.orgId, id]);
+        const ex = await db.query(`SELECT id FROM ${table} WHERE slug = $1 AND org_id = $2 AND id != $3`, [payload.slug, req.orgid, id]);
         if (ex.rows.length) return res.status(409).json({ error: 'slug already exists' });
       }
 
