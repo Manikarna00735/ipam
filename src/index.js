@@ -8,6 +8,17 @@ const { createRoutes } = require('./routes/resources');
 const ipamRoutes = require('./routes/ipam');
 const providers = require('./routes/providers');
 const regions = require('./routes/regions');
+const sites = require('./routes/sites');
+const manufacturers = require('./routes/manufacturers');
+const circuits = require('./routes/circuits');
+const locations = require('./routes/locations');
+const racks = require('./routes/racks');
+const devices = require('./routes/devices');
+const platforms = require('./routes/platforms');
+const wireless = require('./routes/wireless');
+const vrfs = require('./routes/vrfs');
+const vlans = require('./routes/vlans');
+const interfaceModules = require('./routes/interfaceModules');
 const realtime = require('./realtime');
 
 const app = express();
@@ -40,6 +51,17 @@ realtime.setIo(io);
 // app.use('/api/ipam', ipamRoutes);
   app.use('/api/ipam/providers', providers);
   app.use('/api/ipam/regions', regions);
+  app.use('/api/ipam/sites', sites);
+  app.use('/api/ipam/manufacturers', manufacturers);
+  app.use('/api/ipam/circuits', circuits);
+  app.use('/api/ipam/locations', locations);
+  app.use('/api/ipam/racks', racks);
+  app.use('/api/ipam/devices', devices);
+  app.use('/api/ipam/platforms', platforms);
+  app.use('/api/ipam/wireless', wireless);
+  app.use('/api/ipam/vrfs', vrfs);
+  app.use('/api/ipam/vlans', vlans);
+  app.use('/api/ipam/interfaceModules', interfaceModules);
 
 app.use((err, req, res, next) => {
   console.error(err);
