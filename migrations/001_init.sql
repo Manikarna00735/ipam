@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS providers (
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128), 
   unique(orgid,slug)
-)
+);
 
 -- create regions table
 -- mandatory fields: name, slug, orgid, user_id
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS regions (
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128),
   unique(orgid,slug)
-)
+);
 
 -- create sites table
 -- mandatory fields: name, slug, status, orgid, user_id
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS sites (
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128),
   unique(orgid,slug)
-)
+);
 
 -- create locations table
 -- mandatory fields: name, slug, status, site, orgid, user_id
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS locations (
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128),
   unique(orgid,slug)
-)
+);
 
 --create manufacturers table
 -- mandatory fields: name, slug, orgid, user_id
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS platforms (
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128),
   unique(orgid,slug)
-)
+);
 
 -- create vlans table
 -- mandatory fields: name, status, vid, orgid, user_id
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS vlans (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
-)
+);
 
 -- create vrfs table
 -- mandatory fields: name, vfsid, orgid, user_id
@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS vrfs (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
-)
+);
 
 -- create racks table
 -- mandatory fields: name, slug, site, status, orgid, user_id
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS racks (
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128),
   unique(orgid,slug)
-)
+);
 
 -- create devices table
 -- mandatory fields: name, site, devicetype, devicerole, orgid, user_id
@@ -234,7 +234,7 @@ CREATE TABLE IF NOT EXISTS devices (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
-)
+);
 
 -- create wireless table
 -- mandatory fields: ssid, status, orgid, user_id
@@ -258,7 +258,7 @@ CREATE TABLE IF NOT EXISTS wireless (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
-)
+);
 
 -- create interfaces table
 -- mandatory fields: name, device, type, orgid, user_id
@@ -295,7 +295,7 @@ CREATE TABLE IF NOT EXISTS interfaces (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
-)
+);
 
 -- create circuits table
 -- mandatory fields: circuitid, provider, sidea, type, status, orgid, user_id
@@ -327,4 +327,4 @@ CREATE TABLE IF NOT EXISTS circuits (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
-)
+);
