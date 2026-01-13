@@ -18,7 +18,7 @@ const platforms = require('./routes/platforms');
 const wireless = require('./routes/wireless');
 const vrfs = require('./routes/vrfs');
 const vlans = require('./routes/vlans');
-const interfaceModules = require('./routes/interfaceModules');
+const interfaces = require('./routes/interfaces');
 const realtime = require('./realtime');
 
 const app = express();
@@ -61,7 +61,7 @@ realtime.setIo(io);
   app.use('/api/ipam/wireless', wireless);
   app.use('/api/ipam/vrfs', vrfs);
   app.use('/api/ipam/vlans', vlans);
-  app.use('/api/ipam/interfaceModules', interfaceModules);
+  app.use('/api/ipam/interfaces', interfaces);
 
 app.use((err, req, res, next) => {
   console.error(err);

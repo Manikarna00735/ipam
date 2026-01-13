@@ -10,7 +10,7 @@ async function createSites(req, res, next) {
     const sql = `INSERT INTO sites (
       name, slug, "group", description, asn, tagscsv, tenant, tenantgroup,
       timezone, region, location, facility, physicaladdress, shippingaddress,
-      orgid, comments, status, user_id, updatedAt
+      orgid, comments, status, user_id, updatedat
     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,current_timestamp) RETURNING *`;
     const values = [
       p.name,
@@ -57,17 +57,17 @@ async function updateSite(req, res, next) {
     const payload = req.body || {};
     const getRes = await db.query('SELECT * FROM sites WHERE uuid = $1 ', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
-    if ((row.orgid || row.org_id || row.org_uuid) !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
+    if ((row.orgid || row.org_id) !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
 
     const keys = Object.keys(payload);
     const values = Object.values(payload);
     let sql, qValues;
     if (keys.length === 0) {
-      sql = `UPDATE sites SET updatedAt = current_timestamp, user_id = $1 WHERE uuid = $2 RETURNING *`;
+      sql = `UPDATE sites SET updatedat = current_timestamp, user_id = $1 WHERE uuid = $2 RETURNING *`;
       qValues = [req.user?.user_id || null, id];
     } else {
       const setClauses = keys.map((k,i)=>`${k}=$${i+1}`).join(', ');
-      sql = `UPDATE sites SET ${setClauses}, updatedAt = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
+      sql = `UPDATE sites SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
       qValues = values.concat([req.user?.user_id || null, id]);
     }
     const result = await db.query(sql, qValues);
@@ -80,7 +80,7 @@ async function deleteSite(req, res, next) {
     const id = req.params.id;
     const getRes = await db.query('SELECT * FROM sites WHERE uuid = $1 ', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
-    if ((row.orgid || row.org_id || row.org_uuid) !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
+    if ((row.orgid || row.org_id) !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM sites WHERE uuid = $1', [id]);
     res.status(204).send();
   } catch (err) { next(err); }

@@ -8,7 +8,7 @@ const { requireFieldsTypes } = require('../middleware/validators');
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({ ssId: 'string', status: 'boolean' }), wireless.createWireless);
+router.post('/', requireFieldsTypes({ ssid: 'string', status: 'string' }), wireless.createWireless);
 router.get('/', wireless.listWireless);
 router.get('/:id', wireless.getWireless);
 router.put('/:id', wireless.updateWireless);

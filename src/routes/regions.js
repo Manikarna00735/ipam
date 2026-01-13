@@ -8,9 +8,9 @@ router.use(requireAuth);
 router.use(requireOrg);
 
 
-router.post('/', regions.createProviders);
-router.get('/', regions.listProviders);
-router.get('/:id', regions.getProvider);
-router.put('/:id', regions.updateProvider);
-router.delete('/:id', regions.deleteProvider);
+router.post('/', regions.createRegions);
+router.get('/', regions.listRegions);
+router.get('/:id', regions.getRegion);
+router.put('/:id', regions.updateRegion);
+router.delete('/:id', regions.deleteRegion);
 module.exports = router;
