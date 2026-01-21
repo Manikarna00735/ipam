@@ -6,7 +6,7 @@ async function createRegions(req, res, next) {
     const sql = `INSERT INTO regions (name, slug, description, tagscsv, sitescount,
     parent_uuid, parent_name, orgid, user_id, updatedat) 
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,current_timestamp) RETURNING *`;
-    const values = [payload.name, payload.slug, payload?.description || '', payload?.tagscsv || '', payload?.sitescount || '', 
+    const values = [payload.name, payload.slug, payload?.description || '', payload?.tagscsv || '', payload?.sitescount || 0, 
     payload?.parent_uuid || '',payload?.parent_name || '', req.orgid, req.user.user_id];
     const result = await db.query(sql, values);
     const created = result.rows[0];
