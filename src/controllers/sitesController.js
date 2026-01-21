@@ -66,7 +66,7 @@ async function updateSite(req, res, next) {
       sql = `UPDATE sites SET updatedat = current_timestamp, user_id = $1 WHERE uuid = $2 RETURNING *`;
       qValues = [req.user?.user_id || null, id];
     } else {
-      const setClauses = keys.map((k,i)=>`${k}=$${i+1}`).join(', ');
+      const setClauses = keys.map((k,i)=>`"${k}"=$${i+1}`).join(', ');
       sql = `UPDATE sites SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
       qValues = values.concat([req.user?.user_id || null, id]);
     }

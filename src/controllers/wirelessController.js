@@ -32,7 +32,7 @@ async function updateWireless(req, res, next) {
     const getRes = await db.query('SELECT * FROM wireless WHERE uuid = $1 ', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    const setClauses = Object.keys(payload).map((k,i)=>`${k}=$${i+1}`).join(', ');
+    const setClauses = Object.keys(payload).map((k,i)=>`"${k}"=$${i+1}`).join(', ');
     const values = Object.values(payload);
     const sql = `UPDATE wireless SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
