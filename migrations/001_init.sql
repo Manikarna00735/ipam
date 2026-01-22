@@ -298,7 +298,8 @@ CREATE TABLE IF NOT EXISTS interfaces (
 );
 
 -- create circuits table
--- mandatory fields: circuitid, provider, sidea, type, status, orgid, user_id
+-- mandatory fields: circuitid, provider, type, status, orgid, user_id
+DROP TABLE IF EXISTS circuits;
 CREATE TABLE IF NOT EXISTS circuits (
   uuid uuid PRIMARY key default gen_random_uuid(),
   circuitid text not null,
@@ -314,7 +315,6 @@ CREATE TABLE IF NOT EXISTS circuits (
   ordernumber text,
   provider text not null,
   provideraccount text,
-  sidea text not null,
   sidez text,
   tags text,
   tenant text,

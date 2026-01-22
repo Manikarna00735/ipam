@@ -3,9 +3,9 @@ const db = require('../db');
 async function createCircuits(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO circuits (circuitid, provider, sidea, type, status, comments, orgid, user_id, updatedat) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,current_timestamp) RETURNING *`;
-    const values = [payload.circuitid || payload.name || null, payload.provider || null, payload.sidea || null, payload.type || null, payload.status || null, payload?.comments || null, req.orgid, req.user ? req.user.user_id : null];
+    const sql = `INSERT INTO circuits (circuitid, provider, type, status, comments, orgid, user_id, updatedat) 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,current_timestamp) RETURNING *`;
+    const values = [payload.circuitid || payload.name || null, payload.provider || null, payload.type || null, payload.status || null, payload?.comments || null, req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
