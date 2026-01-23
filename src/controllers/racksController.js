@@ -3,9 +3,49 @@ const db = require('../db');
 async function createRacks(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO racks (name, slug, description, comments, tagscsv, orgid, user_id, updatedat) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,current_timestamp) RETURNING *`;
-    const values = [payload.name, payload.slug, payload?.description || null, payload?.comments || null, payload?.tagscsv || null, req.orgid, req.user ? req.user.user_id : null];
+    const sql = `INSERT INTO racks (name, slug, site, description, comments, assettag,
+    tagscsv, 
+    tenant,
+    facilityid,
+    role,
+    type,
+    location,
+    heightu,
+    widthin,
+    maxweightkg,
+    rackweightkg,
+    totalweightkg,
+    mountingdepthmm,
+    outerdepthmm,
+    outerwidthmm,
+    powerutilization,
+    spaceutilization,
+    serialnumber,
+    devices,
+    status, orgid, user_id, updatedat) 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,current_timestamp) RETURNING *`;
+    const values = [payload.name, payload.slug, payload.site, payload?.description || null, payload?.comments || null, 
+    payload?.assettag || null,
+    payload?.tagscsv || null, 
+    payload?.tenant || null,
+    payload?.facilityid || null,
+    payload?.role || null,
+    payload?.type || null,
+    payload?.location || null,
+    payload?.heightu || null,
+    payload?.widthin || null,
+    payload?.maxweightkg || null,
+    payload?.rackweightkg || null,
+    payload?.totalweightkg || null,
+    payload?.mountingdepthmm || null,
+    payload?.outerdepthmm || null,
+    payload?.outerwidthmm || null,
+    payload?.powerutilization || null,
+    payload?.spaceutilization || null,
+    payload?.serialnumber || null,
+    payload?.devices || null,
+    payload.status,
+    req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
