@@ -3,7 +3,7 @@ const db = require('../db');
 async function createPlatforms(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO platforms (name, slug, description, comments, tags, manufacturer, configtemplate, napalmdriver, napalmarguments, docid, orgid, user_id, updatedat) 
+    const sql = `INSERT INTO platforms (name, slug, description, tags, manufacturer, configtemplate, napalmdriver, napalmarguments, docid, orgid, user_id, updatedat) 
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,current_timestamp) RETURNING *`;
     const values = [payload.name, payload.slug, payload?.description || null, payload?.tags || null, payload?.manufacturer || null, payload?.configtemplate || null, payload?.napalmdriver || null, payload?.napalmarguments || null, payload?.docid || null, req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
