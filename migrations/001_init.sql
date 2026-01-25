@@ -346,7 +346,7 @@ CREATE TABLE IF NOT EXISTS networks (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
- )
+ );
 
  
 --create subnet table
@@ -368,7 +368,7 @@ CREATE TABLE IF NOT EXISTS subnets (
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
- )
+ );
 
 --create ips table
 DROP TABLE IF EXISTS ips;
@@ -381,4 +381,4 @@ CREATE TABLE IF NOT EXISTS ips(
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
-)
+);
