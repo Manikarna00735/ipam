@@ -328,3 +328,57 @@ CREATE TABLE IF NOT EXISTS circuits (
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
 );
+
+--create network table
+DROP TABLE IF EXISTS networks;
+CREATE TABLE IF NOT EXISTS networks (
+  uuid uuid PRIMARY key default gen_random_uuid(),
+  prefix inet not null,
+  site_uuid uuid not null,
+  vrf_uuid uuid not null,
+  vlan_uuid uuid not null,
+  role text not null,
+  tags text,
+  tenant text not null,
+  tenantgroup text,
+  orgid varchar(128),
+  status text not null,
+  createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updatedat TIMESTAMP WITH TIME zone,
+  user_id varchar(128)
+ )
+
+ 
+--create subnet table
+DROP TABLE IF EXISTS subnets;
+CREATE TABLE IF NOT EXISTS subnets (
+  uuid uuid PRIMARY key default gen_random_uuid(),
+  networks_uuid uuid REFERENCES networks("uuid") ON DELETE cascade,
+  subnet inet not null,
+  site_uuid uuid not null,
+  vrf_uuid uuid not null,
+  vlan_uuid uuid not null,
+  role text not null,
+  tags text,
+  description text,
+  tenant text not null,
+  tenantgroup text,
+  orgid varchar(128),
+  status text not null,
+  createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updatedat TIMESTAMP WITH TIME zone,
+  user_id varchar(128)
+ )
+
+--create ips table
+DROP TABLE IF EXISTS ips;
+CREATE TABLE IF NOT EXISTS ips(
+  uuid uuid PRIMARY key default gen_random_uuid(),
+  subnets_uuid uuid references subnets("uuid") ON DELETE cascade,
+  ip inet not null,
+  orgid varchar(128),
+  status text default 'available',
+  createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updatedat TIMESTAMP WITH TIME zone,
+  user_id varchar(128)
+)

@@ -30,7 +30,7 @@ realtime.setIo(io);
 
 
 // IPAM nested endpoints (prefixes/subnets/ips)
-// app.use('/api/ipam', ipamRoutes);
+app.use('/api/ipam', ipamRoutes);
   app.use('/api/ipam/providers', providers);
   app.use('/api/ipam/regions', regions);
   app.use('/api/ipam/sites', sites);

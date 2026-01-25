@@ -16,6 +16,7 @@
     "express": "^4.18.2",
     "express-validator": "^6.14.3",
     "ip": "^2.0.0",
+    "ip-address": "^10.1.0",
     "jsonwebtoken": "^9.0.0",
     "pg": "^8.10.0",
     "socket.io": "^4.8.1"
