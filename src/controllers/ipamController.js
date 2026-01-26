@@ -1,6 +1,7 @@
 const db = require('../db');
 const { Address4, Address6 } = require('ip-address');
 const realtime = require('../realtime');
+const common = require('../common');
 
 // Helper function to check if two IP ranges overlap
 function checkRangesOverlap(range1, range2) {
@@ -113,14 +114,32 @@ async function createPrefix(req, res, next) {
 
 async function listPrefixes(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM networks WHERE orgid = $1 ORDER BY prefix', [req.orgid])).rows;
+    const rows = (await db.query(`SELECT ns.uuid, ns.prefix, json_build_object('uuid', ns.site_uuid, 'name', s.name) as site, 
+      json_build_object('uuid', ns.vrf_uuid, 'name', v.name) as vrf,
+      json_build_object('uuid', ns.vlan_uuid, 'name', l.name) as vlan,
+      ns.role, ns.tags, ns.tenant, ns.tenantgroup, ns.orgid, ns.status, ns.createdat, ns.updatedat, 
+      ns.user_id
+      FROM networks ns
+      left outer join sites s on ns.site_uuid = s.uuid
+      left outer join vrfs v on ns.vrf_uuid = v.uuid
+      left outer join vlans l on ns.vlan_uuid = l.uuid
+      WHERE ns.orgid = $1 ORDER BY ns.prefix`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getPrefix(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM networks WHERE orgid = $1 AND uuid = $2', [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT ns.uuid, ns.prefix, json_build_object('uuid', ns.site_uuid, 'name', s.name) as site, 
+      json_build_object('uuid', ns.vrf_uuid, 'name', v.name) as vrf,
+      json_build_object('uuid', ns.vlan_uuid, 'name', l.name) as vlan,
+      ns.role, ns.tags, ns.tenant, ns.tenantgroup, ns.orgid, ns.status, ns.createdat, ns.updatedat, 
+      ns.user_id
+      FROM networks ns
+      left outer join sites s on ns.site_uuid = s.uuid
+      left outer join vrfs v on ns.vrf_uuid = v.uuid
+      left outer join vlans l on ns.vlan_uuid = l.uuid
+      WHERE ns.orgid = $1 AND ns.uuid = $2 ORDER BY ns.prefix`, [req.orgid, req.params.id])).rows;
     if (rows.length === 0) {
       return res.status(404).json({ error: 'not found' });
     }
@@ -139,21 +158,24 @@ async function updatePrefix(req, res, next) {
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
 
     // Validate prefix if being updated
-    if (payload.prefix) {
-      try {
-        const prefixStr = payload.prefix.includes('/') ? payload.prefix : `${payload.prefix}/32`;
-        if (prefixStr.includes(':')) {
-          new Address6(prefixStr);
-        } else {
-          new Address4(prefixStr);
-        }
-      } catch (err) {
-        return res.status(400).json({ error: 'invalid prefix format' });
-      }
-    }
+    // if (payload.prefix) {
+    //   try {
+    //     const prefixStr = payload.prefix.includes('/') ? payload.prefix : `${payload.prefix}/32`;
+    //     if (prefixStr.includes(':')) {
+    //       new Address6(prefixStr);
+    //     } else {
+    //       new Address4(prefixStr);
+    //     }
+    //   } catch (err) {
+    //     return res.status(400).json({ error: 'invalid prefix format' });
+    //   }
+    // }
 
-    const keys = Object.keys(payload);
-    const values = Object.values(payload);
+    const allowedKeys = ['site_uuid', 'vrf_uuid', 'vlan_uuid', 'role', 'tags', 'tenant', 'tenantgroup', 'status'];
+    const newpayload = await common.allowedUpdateKeys(payload, allowedKeys);
+
+    const keys = Object.keys(newpayload);
+    const values = Object.values(newpayload);
     let sql, qValues;
     
     if (keys.length === 0) {
@@ -178,6 +200,13 @@ async function updatePrefix(req, res, next) {
 async function deletePrefix(req, res, next) {
   try {
     const id = req.params.id;
+
+    const activeIps = await db.query(`SELECT * FROM ips WHERE subnets_uuid in ( select uuid from subnets where networks_uuid = $1) 
+      AND orgid = $2 AND status != 'disabled' `, [id, req.orgid]);
+    if (activeIps.rows.length !== 0) {
+      return res.status(404).json({ error: 'Cannot delete: This network is currently in use by one or more active IP addresses.' });
+    }
+
     const getRes = await db.query('SELECT * FROM networks WHERE uuid = $1', [id]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'not found' });
@@ -400,7 +429,16 @@ async function listSubnets(req, res, next) {
     }
 
     const rows = (await db.query(
-      'SELECT * FROM subnets WHERE networks_uuid = $1 AND orgid = $2 ORDER BY subnet',
+      `SELECT ns.uuid, ns.subnet, ns.networks_uuid, json_build_object('uuid', ns.site_uuid, 'name', s.name) as site, 
+      json_build_object('uuid', ns.vrf_uuid, 'name', v.name) as vrf,
+      json_build_object('uuid', ns.vlan_uuid, 'name', l.name) as vlan,
+      ns.role, ns.tags, ns.tenant, ns.tenantgroup, ns. description, ns.orgid, ns.status, ns.createdat, ns.updatedat, 
+      ns.user_id
+      FROM subnets ns
+      left outer join sites s on ns.site_uuid = s.uuid
+      left outer join vrfs v on ns.vrf_uuid = v.uuid
+      left outer join vlans l on ns.vlan_uuid = l.uuid
+      WHERE ns.networks_uuid = $1 AND ns.orgid = $2 ORDER BY ns.subnet`,
       [prefixId, req.orgid]
     )).rows;
     res.json({ items: rows });
@@ -418,7 +456,7 @@ async function updateSubnet(req, res, next) {
     if (prefixRes.rows.length === 0) {
       return res.status(404).json({ error: 'prefix not found' });
     }
-    const prefix = prefixRes.rows[0];
+    // const prefix = prefixRes.rows[0];
 
     // Get subnet
     const getRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2', [subnetId, prefixId]);
@@ -427,29 +465,32 @@ async function updateSubnet(req, res, next) {
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
 
     // Validate subnet if being updated and ensure it's within prefix
-    if (payload.subnet) {
-      try {
-        const subnetStr = payload.subnet.includes('/') ? payload.subnet : `${payload.subnet}/32`;
-        let subnetAddr, prefixAddr;
+    // if (payload.subnet) {
+    //   try {
+    //     const subnetStr = payload.subnet.includes('/') ? payload.subnet : `${payload.subnet}/32`;
+    //     let subnetAddr, prefixAddr;
         
-        if (subnetStr.includes(':')) {
-          subnetAddr = new Address6(subnetStr);
-          prefixAddr = new Address6(prefix.prefix);
-        } else {
-          subnetAddr = new Address4(subnetStr);
-          prefixAddr = new Address4(prefix.prefix);
-        }
+    //     if (subnetStr.includes(':')) {
+    //       subnetAddr = new Address6(subnetStr);
+    //       prefixAddr = new Address6(prefix.prefix);
+    //     } else {
+    //       subnetAddr = new Address4(subnetStr);
+    //       prefixAddr = new Address4(prefix.prefix);
+    //     }
 
-        if (!subnetAddr.isInSubnet(prefixAddr)) {
-          return res.status(400).json({ error: 'subnet must be within the parent prefix' });
-        }
-      } catch (err) {
-        return res.status(400).json({ error: 'invalid subnet format' });
-      }
-    }
+    //     if (!subnetAddr.isInSubnet(prefixAddr)) {
+    //       return res.status(400).json({ error: 'subnet must be within the parent prefix' });
+    //     }
+    //   } catch (err) {
+    //     return res.status(400).json({ error: 'invalid subnet format' });
+    //   }
+    // }
 
-    const keys = Object.keys(payload);
-    const values = Object.values(payload);
+    const allowedKeys = ['site_uuid', 'vrf_uuid', 'vlan_uuid', 'role', 'tags', 'description', 'tenant', 'tenantgroup', 'status'];
+    const newpayload = await common.allowedUpdateKeys(payload, allowedKeys);
+
+    const keys = Object.keys(newpayload);
+    const values = Object.values(newpayload);
     let sql, qValues;
     
     if (keys.length === 0) {
@@ -475,6 +516,11 @@ async function deleteSubnet(req, res, next) {
   try {
     const prefixId = req.params.id;
     const subnetId = req.params.subnetId;
+
+    const activeIps = await db.query(`SELECT * FROM ips WHERE subnets_uuid = $1 AND orgid = $2 AND status != 'disabled' `, [subnetId, req.orgid]);
+    if (activeIps.rows.length !== 0) {
+      return res.status(404).json({ error: 'Cannot delete: This subnet is currently in use by one or more active IP addresses.' });
+    }
     
     // Verify prefix exists and belongs to org
     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
@@ -498,267 +544,267 @@ async function deleteSubnet(req, res, next) {
 
 // ==================== IPs ====================
 
-async function createIP(req, res, next) {
-  try {
-    const prefixId = req.params.id;
-    const subnetId = req.params.subnetId;
-    const p = req.body || {};
+// async function createIP(req, res, next) {
+//   try {
+//     const prefixId = req.params.id;
+//     const subnetId = req.params.subnetId;
+//     const p = req.body || {};
     
-    // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
-    if (prefixRes.rows.length === 0) {
-      return res.status(404).json({ error: 'prefix not found' });
-    }
+//     // Verify prefix exists and belongs to org
+//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+//     if (prefixRes.rows.length === 0) {
+//       return res.status(404).json({ error: 'prefix not found' });
+//     }
 
-    // Verify subnet exists and belongs to prefix
-    const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
-    if (subnetRes.rows.length === 0) {
-      return res.status(404).json({ error: 'subnet not found' });
-    }
-    const subnet = subnetRes.rows[0];
+//     // Verify subnet exists and belongs to prefix
+//     const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
+//     if (subnetRes.rows.length === 0) {
+//       return res.status(404).json({ error: 'subnet not found' });
+//     }
+//     const subnet = subnetRes.rows[0];
 
-    // If IP is provided, validate it; otherwise generate next available IP
-    let ipAddress;
-    if (p.ip) {
-      // Validate IP format and ensure it's within the subnet
-      try {
-        const ipStr = p.ip;
-        let ipAddr, subnetAddr;
+//     // If IP is provided, validate it; otherwise generate next available IP
+//     let ipAddress;
+//     if (p.ip) {
+//       // Validate IP format and ensure it's within the subnet
+//       try {
+//         const ipStr = p.ip;
+//         let ipAddr, subnetAddr;
         
-        if (ipStr.includes(':')) {
-          ipAddr = new Address6(ipStr);
-          subnetAddr = new Address6(subnet.subnet);
-        } else {
-          ipAddr = new Address4(ipStr);
-          subnetAddr = new Address4(subnet.subnet);
-        }
+//         if (ipStr.includes(':')) {
+//           ipAddr = new Address6(ipStr);
+//           subnetAddr = new Address6(subnet.subnet);
+//         } else {
+//           ipAddr = new Address4(ipStr);
+//           subnetAddr = new Address4(subnet.subnet);
+//         }
 
-        if (!ipAddr.isInSubnet(subnetAddr)) {
-          return res.status(400).json({ error: 'IP address must be within the subnet' });
-        }
+//         if (!ipAddr.isInSubnet(subnetAddr)) {
+//           return res.status(400).json({ error: 'IP address must be within the subnet' });
+//         }
 
-        // Check if IP already exists
-        const existingIP = await db.query('SELECT * FROM ips WHERE ip = $1 AND subnets_uuid = $2 AND orgid = $3', [p.ip, subnetId, req.orgid]);
-        if (existingIP.rows.length > 0) {
-          return res.status(409).json({ error: 'IP address already exists in this subnet' });
-        }
+//         // Check if IP already exists
+//         const existingIP = await db.query('SELECT * FROM ips WHERE ip = $1 AND subnets_uuid = $2 AND orgid = $3', [p.ip, subnetId, req.orgid]);
+//         if (existingIP.rows.length > 0) {
+//           return res.status(409).json({ error: 'IP address already exists in this subnet' });
+//         }
 
-        ipAddress = p.ip;
-      } catch (err) {
-        return res.status(400).json({ error: 'invalid IP address format' });
-      }
-    } else {
-      // Generate next available IP in subnet
-      try {
-        const subnetAddr = subnet.subnet.includes(':') 
-          ? new Address6(subnet.subnet)
-          : new Address4(subnet.subnet);
+//         ipAddress = p.ip;
+//       } catch (err) {
+//         return res.status(400).json({ error: 'invalid IP address format' });
+//       }
+//     } else {
+//       // Generate next available IP in subnet
+//       try {
+//         const subnetAddr = subnet.subnet.includes(':') 
+//           ? new Address6(subnet.subnet)
+//           : new Address4(subnet.subnet);
         
-        // Get all existing IPs in this subnet
-        const existingIPs = await db.query(
-          'SELECT ip::text as ip FROM ips WHERE subnets_uuid = $1 AND orgid = $2',
-          [subnetId, req.orgid]
-        );
+//         // Get all existing IPs in this subnet
+//         const existingIPs = await db.query(
+//           'SELECT ip::text as ip FROM ips WHERE subnets_uuid = $1 AND orgid = $2',
+//           [subnetId, req.orgid]
+//         );
         
-        const usedIPs = new Set(existingIPs.rows.map(r => r.ip));
+//         const usedIPs = new Set(existingIPs.rows.map(r => r.ip));
         
-        // Find first available IP using BigInt arithmetic
-        const startIP = subnetAddr.startAddress();
-        const endIP = subnetAddr.endAddress();
+//         // Find first available IP using BigInt arithmetic
+//         const startIP = subnetAddr.startAddress();
+//         const endIP = subnetAddr.endAddress();
         
-        let found = false;
+//         let found = false;
         
-        // Skip network and broadcast addresses for IPv4
-        if (subnetAddr instanceof Address4) {
-          // Get BigInt values (v10.x uses bigInt() which returns native BigInt)
-          const startBigInt = startIP.bigInt();
-          const endBigInt = endIP.bigInt();
+//         // Skip network and broadcast addresses for IPv4
+//         if (subnetAddr instanceof Address4) {
+//           // Get BigInt values (v10.x uses bigInt() which returns native BigInt)
+//           const startBigInt = startIP.bigInt();
+//           const endBigInt = endIP.bigInt();
           
-          // Skip first address (network) and last address (broadcast)
-          let currentBigInt = startBigInt + BigInt(1);
-          const endBigIntUsable = endBigInt - BigInt(1);
+//           // Skip first address (network) and last address (broadcast)
+//           let currentBigInt = startBigInt + BigInt(1);
+//           const endBigIntUsable = endBigInt - BigInt(1);
           
-          while (currentBigInt <= endBigIntUsable && !found) {
-            // Convert BigInt back to Address4
-            const currentAddr = Address4.fromBigInt(currentBigInt);
-            const ipStr = currentAddr.address;
+//           while (currentBigInt <= endBigIntUsable && !found) {
+//             // Convert BigInt back to Address4
+//             const currentAddr = Address4.fromBigInt(currentBigInt);
+//             const ipStr = currentAddr.address;
             
-            if (!usedIPs.has(ipStr)) {
-              ipAddress = ipStr;
-              found = true;
-            } else {
-              currentBigInt = currentBigInt + BigInt(1);
-            }
-          }
-        } else {
-          // For IPv6, use BigInt arithmetic
-          const startBigInt = startIP.bigInt();
-          const endBigInt = endIP.bigInt();
+//             if (!usedIPs.has(ipStr)) {
+//               ipAddress = ipStr;
+//               found = true;
+//             } else {
+//               currentBigInt = currentBigInt + BigInt(1);
+//             }
+//           }
+//         } else {
+//           // For IPv6, use BigInt arithmetic
+//           const startBigInt = startIP.bigInt();
+//           const endBigInt = endIP.bigInt();
           
-          // Skip first address (network)
-          let currentBigInt = startBigInt + BigInt(1);
+//           // Skip first address (network)
+//           let currentBigInt = startBigInt + BigInt(1);
           
-          while (currentBigInt <= endBigInt && !found) {
-            // Convert BigInt back to Address6
-            const currentAddr = Address6.fromBigInt(currentBigInt);
-            const ipStr = currentAddr.correctForm();
+//           while (currentBigInt <= endBigInt && !found) {
+//             // Convert BigInt back to Address6
+//             const currentAddr = Address6.fromBigInt(currentBigInt);
+//             const ipStr = currentAddr.correctForm();
             
-            if (!usedIPs.has(ipStr)) {
-              ipAddress = ipStr;
-              found = true;
-            } else {
-              currentBigInt = currentBigInt + BigInt(1);
-            }
-          }
-        }
+//             if (!usedIPs.has(ipStr)) {
+//               ipAddress = ipStr;
+//               found = true;
+//             } else {
+//               currentBigInt = currentBigInt + BigInt(1);
+//             }
+//           }
+//         }
         
-        if (!found) {
-          return res.status(409).json({ error: 'no available IP addresses in this subnet' });
-        }
-      } catch (err) {
-        return res.status(400).json({ error: 'failed to generate IP address: ' + err.message });
-      }
-    }
+//         if (!found) {
+//           return res.status(409).json({ error: 'no available IP addresses in this subnet' });
+//         }
+//       } catch (err) {
+//         return res.status(400).json({ error: 'failed to generate IP address: ' + err.message });
+//       }
+//     }
 
-    const sql = `INSERT INTO ips (
-      subnets_uuid, ip, orgid, status, user_id, updatedat
-    ) VALUES ($1, $2, $3, $4, $5, current_timestamp) RETURNING *`;
+//     const sql = `INSERT INTO ips (
+//       subnets_uuid, ip, orgid, status, user_id, updatedat
+//     ) VALUES ($1, $2, $3, $4, $5, current_timestamp) RETURNING *`;
     
-    const values = [
-      subnetId,
-      ipAddress,
-      req.orgid || null,
-      p.status || 'available',
-      req.user?.user_id || null
-    ];
+//     const values = [
+//       subnetId,
+//       ipAddress,
+//       req.orgid || null,
+//       p.status || 'available',
+//       req.user?.user_id || null
+//     ];
 
-    const result = await db.query(sql, values);
-    const createdIP = result.rows[0];
+//     const result = await db.query(sql, values);
+//     const createdIP = result.rows[0];
     
-    // Emit real-time event
-    realtime.emit('ips:created', createdIP);
+//     // Emit real-time event
+//     realtime.emit('ips:created', createdIP);
     
-    res.status(201).json(createdIP);
-  } catch (err) { next(err); }
-}
+//     res.status(201).json(createdIP);
+//   } catch (err) { next(err); }
+// }
 
-async function createIPsBatch(req, res, next) {
-  try {
-    const prefixId = req.params.id;
-    const subnetId = req.params.subnetId;
-    const p = req.body || {};
+// async function createIPsBatch(req, res, next) {
+//   try {
+//     const prefixId = req.params.id;
+//     const subnetId = req.params.subnetId;
+//     const p = req.body || {};
     
-    // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
-    if (prefixRes.rows.length === 0) {
-      return res.status(404).json({ error: 'prefix not found' });
-    }
+//     // Verify prefix exists and belongs to org
+//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+//     if (prefixRes.rows.length === 0) {
+//       return res.status(404).json({ error: 'prefix not found' });
+//     }
 
-    // Verify subnet exists and belongs to prefix
-    const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
-    if (subnetRes.rows.length === 0) {
-      return res.status(404).json({ error: 'subnet not found' });
-    }
-    const subnet = subnetRes.rows[0];
+//     // Verify subnet exists and belongs to prefix
+//     const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
+//     if (subnetRes.rows.length === 0) {
+//       return res.status(404).json({ error: 'subnet not found' });
+//     }
+//     const subnet = subnetRes.rows[0];
 
-    const count = p.count || 1;
-    if (count < 1 || count > 1000) {
-      return res.status(400).json({ error: 'count must be between 1 and 1000' });
-    }
+//     const count = p.count || 1;
+//     if (count < 1 || count > 1000) {
+//       return res.status(400).json({ error: 'count must be between 1 and 1000' });
+//     }
 
-    try {
-      const subnetAddr = subnet.subnet.includes(':') 
-        ? new Address6(subnet.subnet)
-        : new Address4(subnet.subnet);
+//     try {
+//       const subnetAddr = subnet.subnet.includes(':') 
+//         ? new Address6(subnet.subnet)
+//         : new Address4(subnet.subnet);
       
-      // Get all existing IPs in this subnet
-      const existingIPs = await db.query(
-        'SELECT ip::text as ip FROM ips WHERE subnets_uuid = $1 AND orgid = $2',
-        [subnetId, req.orgid]
-      );
+//       // Get all existing IPs in this subnet
+//       const existingIPs = await db.query(
+//         'SELECT ip::text as ip FROM ips WHERE subnets_uuid = $1 AND orgid = $2',
+//         [subnetId, req.orgid]
+//       );
       
-      const usedIPs = new Set(existingIPs.rows.map(r => r.ip));
+//       const usedIPs = new Set(existingIPs.rows.map(r => r.ip));
       
-      // Find available IPs using BigInt arithmetic
-      const startIP = subnetAddr.startAddress();
-      const endIP = subnetAddr.endAddress();
+//       // Find available IPs using BigInt arithmetic
+//       const startIP = subnetAddr.startAddress();
+//       const endIP = subnetAddr.endAddress();
       
-      const generatedIPs = [];
+//       const generatedIPs = [];
       
-      // Skip network and broadcast addresses for IPv4
-      if (subnetAddr instanceof Address4) {
-        // Get BigInt values (v10.x uses bigInt() which returns native BigInt)
-        const startBigInt = startIP.bigInt();
-        const endBigInt = endIP.bigInt();
+//       // Skip network and broadcast addresses for IPv4
+//       if (subnetAddr instanceof Address4) {
+//         // Get BigInt values (v10.x uses bigInt() which returns native BigInt)
+//         const startBigInt = startIP.bigInt();
+//         const endBigInt = endIP.bigInt();
         
-        // Skip first address (network) and last address (broadcast)
-        let currentBigInt = startBigInt + BigInt(1);
-        const endBigIntUsable = endBigInt - BigInt(1);
+//         // Skip first address (network) and last address (broadcast)
+//         let currentBigInt = startBigInt + BigInt(1);
+//         const endBigIntUsable = endBigInt - BigInt(1);
         
-        while (currentBigInt <= endBigIntUsable && generatedIPs.length < count) {
-          // Convert BigInt back to Address4
-          const currentAddr = Address4.fromBigInt(currentBigInt);
-          const ipStr = currentAddr.address;
+//         while (currentBigInt <= endBigIntUsable && generatedIPs.length < count) {
+//           // Convert BigInt back to Address4
+//           const currentAddr = Address4.fromBigInt(currentBigInt);
+//           const ipStr = currentAddr.address;
           
-          if (!usedIPs.has(ipStr)) {
-            generatedIPs.push(ipStr);
-          }
-          currentBigInt = currentBigInt + BigInt(1);
-        }
-      } else {
-        // For IPv6, use BigInt arithmetic
-        const startBigInt = startIP.bigInt();
-        const endBigInt = endIP.bigInt();
+//           if (!usedIPs.has(ipStr)) {
+//             generatedIPs.push(ipStr);
+//           }
+//           currentBigInt = currentBigInt + BigInt(1);
+//         }
+//       } else {
+//         // For IPv6, use BigInt arithmetic
+//         const startBigInt = startIP.bigInt();
+//         const endBigInt = endIP.bigInt();
         
-        // Skip first address (network)
-        let currentBigInt = startBigInt + BigInt(1);
+//         // Skip first address (network)
+//         let currentBigInt = startBigInt + BigInt(1);
         
-        while (currentBigInt <= endBigInt && generatedIPs.length < count) {
-          // Convert BigInt back to Address6
-          const currentAddr = Address6.fromBigInt(currentBigInt);
-          const ipStr = currentAddr.correctForm();
+//         while (currentBigInt <= endBigInt && generatedIPs.length < count) {
+//           // Convert BigInt back to Address6
+//           const currentAddr = Address6.fromBigInt(currentBigInt);
+//           const ipStr = currentAddr.correctForm();
           
-          if (!usedIPs.has(ipStr)) {
-            generatedIPs.push(ipStr);
-          }
-          currentBigInt = currentBigInt + BigInt(1);
-        }
-      }
+//           if (!usedIPs.has(ipStr)) {
+//             generatedIPs.push(ipStr);
+//           }
+//           currentBigInt = currentBigInt + BigInt(1);
+//         }
+//       }
       
-      if (generatedIPs.length < count) {
-        return res.status(409).json({ 
-          error: `only ${generatedIPs.length} available IP addresses found, requested ${count}` 
-        });
-      }
+//       if (generatedIPs.length < count) {
+//         return res.status(409).json({ 
+//           error: `only ${generatedIPs.length} available IP addresses found, requested ${count}` 
+//         });
+//       }
 
-      // Insert all IPs in a transaction
-      const results = [];
-      for (const ip of generatedIPs) {
-        const sql = `INSERT INTO ips (
-          subnets_uuid, ip, orgid, status, user_id, updatedat
-        ) VALUES ($1, $2, $3, $4, $5, current_timestamp) RETURNING *`;
+//       // Insert all IPs in a transaction
+//       const results = [];
+//       for (const ip of generatedIPs) {
+//         const sql = `INSERT INTO ips (
+//           subnets_uuid, ip, orgid, status, user_id, updatedat
+//         ) VALUES ($1, $2, $3, $4, $5, current_timestamp) RETURNING *`;
         
-        const values = [
-          subnetId,
-          ip,
-          req.orgid || null,
-          p.status || 'available',
-          req.user?.user_id || null
-        ];
+//         const values = [
+//           subnetId,
+//           ip,
+//           req.orgid || null,
+//           p.status || 'available',
+//           req.user?.user_id || null
+//         ];
 
-        const result = await db.query(sql, values);
-        results.push(result.rows[0]);
+//         const result = await db.query(sql, values);
+//         results.push(result.rows[0]);
         
-        // Emit real-time event for each created IP
-        realtime.emit('ips:created', result.rows[0]);
-      }
+//         // Emit real-time event for each created IP
+//         realtime.emit('ips:created', result.rows[0]);
+//       }
 
-      res.status(201).json({ items: results, count: results.length });
-    } catch (err) {
-      return res.status(400).json({ error: 'failed to generate IP addresses: ' + err.message });
-    }
-  } catch (err) { next(err); }
-}
+//       res.status(201).json({ items: results, count: results.length });
+//     } catch (err) {
+//       return res.status(400).json({ error: 'failed to generate IP addresses: ' + err.message });
+//     }
+//   } catch (err) { next(err); }
+// }
 
 async function listIPs(req, res, next) {
   try {
@@ -812,39 +858,41 @@ async function updateIP(req, res, next) {
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
 
     // Validate IP if being updated and ensure it's within subnet
-    if (payload.ip) {
-      try {
-        const ipStr = payload.ip;
-        let ipAddr, subnetAddr;
+    // if (payload.ip) {
+    //   try {
+    //     const ipStr = payload.ip;
+    //     let ipAddr, subnetAddr;
         
-        if (ipStr.includes(':')) {
-          ipAddr = new Address6(ipStr);
-          subnetAddr = new Address6(subnet.subnet);
-        } else {
-          ipAddr = new Address4(ipStr);
-          subnetAddr = new Address4(subnet.subnet);
-        }
+    //     if (ipStr.includes(':')) {
+    //       ipAddr = new Address6(ipStr);
+    //       subnetAddr = new Address6(subnet.subnet);
+    //     } else {
+    //       ipAddr = new Address4(ipStr);
+    //       subnetAddr = new Address4(subnet.subnet);
+    //     }
 
-        if (!ipAddr.isInSubnet(subnetAddr)) {
-          return res.status(400).json({ error: 'IP address must be within the subnet' });
-        }
+    //     if (!ipAddr.isInSubnet(subnetAddr)) {
+    //       return res.status(400).json({ error: 'IP address must be within the subnet' });
+    //     }
 
-        // Check if IP already exists (excluding current IP)
-        const existingIP = await db.query(
-          'SELECT * FROM ips WHERE ip = $1 AND subnets_uuid = $2 AND uuid != $3 AND orgid = $4',
-          [payload.ip, subnetId, ipId, req.orgid]
-        );
-        if (existingIP.rows.length > 0) {
-          return res.status(409).json({ error: 'IP address already exists in this subnet' });
-        }
-      } catch (err) {
-        return res.status(400).json({ error: 'invalid IP address format' });
-      }
-    }
-
-    const keys = Object.keys(payload);
-    const values = Object.values(payload);
+    //     // Check if IP already exists (excluding current IP)
+    //     const existingIP = await db.query(
+    //       'SELECT * FROM ips WHERE ip = $1 AND subnets_uuid = $2 AND uuid != $3 AND orgid = $4',
+    //       [payload.ip, subnetId, ipId, req.orgid]
+    //     );
+    //     if (existingIP.rows.length > 0) {
+    //       return res.status(409).json({ error: 'IP address already exists in this subnet' });
+    //     }
+    //   } catch (err) {
+    //     return res.status(400).json({ error: 'invalid IP address format' });
+    //   }
+    // }
+    const newpayload = await common.allowedUpdateKeys(payload, ['status']);
+    
+    const keys = Object.keys(newpayload);
+    const values = Object.values(newpayload);
     let sql, qValues;
+    
     
     if (keys.length === 0) {
       sql = `UPDATE ips SET updatedat = current_timestamp, user_id = $1 WHERE uuid = $2 RETURNING *`;
@@ -865,37 +913,37 @@ async function updateIP(req, res, next) {
   } catch (err) { next(err); }
 }
 
-async function deleteIP(req, res, next) {
-  try {
-    const prefixId = req.params.id;
-    const subnetId = req.params.subnetId;
-    const ipId = req.params.ipId;
+// async function deleteIP(req, res, next) {
+//   try {
+//     const prefixId = req.params.id;
+//     const subnetId = req.params.subnetId;
+//     const ipId = req.params.ipId;
     
-    // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
-    if (prefixRes.rows.length === 0) {
-      return res.status(404).json({ error: 'prefix not found' });
-    }
+//     // Verify prefix exists and belongs to org
+//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+//     if (prefixRes.rows.length === 0) {
+//       return res.status(404).json({ error: 'prefix not found' });
+//     }
 
-    // Verify subnet exists and belongs to prefix
-    const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
-    if (subnetRes.rows.length === 0) {
-      return res.status(404).json({ error: 'subnet not found' });
-    }
+//     // Verify subnet exists and belongs to prefix
+//     const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
+//     if (subnetRes.rows.length === 0) {
+//       return res.status(404).json({ error: 'subnet not found' });
+//     }
 
-    const getRes = await db.query('SELECT * FROM ips WHERE uuid = $1 AND subnets_uuid = $2', [ipId, subnetId]);
-    const row = getRes.rows[0];
-    if (!row) return res.status(404).json({ error: 'IP not found' });
-    if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
+//     const getRes = await db.query('SELECT * FROM ips WHERE uuid = $1 AND subnets_uuid = $2', [ipId, subnetId]);
+//     const row = getRes.rows[0];
+//     if (!row) return res.status(404).json({ error: 'IP not found' });
+//     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     
-    await db.query('DELETE FROM ips WHERE uuid = $1', [ipId]);
+//     await db.query('DELETE FROM ips WHERE uuid = $1', [ipId]);
     
-    // Emit real-time event
-    realtime.emit('ips:deleted', { id: ipId, org_id: req.orgid });
+//     // Emit real-time event
+//     realtime.emit('ips:deleted', { id: ipId, org_id: req.orgid });
     
-    res.status(204).send();
-  } catch (err) { next(err); }
-}
+//     res.status(204).send();
+//   } catch (err) { next(err); }
+// }
 
 module.exports = {
   // Prefixes
@@ -910,9 +958,9 @@ module.exports = {
   updateSubnet,
   deleteSubnet,
   // IPs
-  createIP,
-  createIPsBatch,
+  // createIP,
+  // createIPsBatch,
   listIPs,
   updateIP,
-  deleteIP,
+  // deleteIP,
 };

@@ -38,10 +38,10 @@ router.put('/prefixes/:id/subnets/:subnetId', ipam.updateSubnet);
 router.delete('/prefixes/:id/subnets/:subnetId', ipam.deleteSubnet);
 
 // IPs routes (nested under prefixes and subnets)
-router.post('/prefixes/:id/subnets/:subnetId/ips', ipam.createIP);
-router.post('/prefixes/:id/subnets/:subnetId/ips/batch', ipam.createIPsBatch);
+// router.post('/prefixes/:id/subnets/:subnetId/ips', ipam.createIP);
+// router.post('/prefixes/:id/subnets/:subnetId/ips/batch', ipam.createIPsBatch);
 router.get('/prefixes/:id/subnets/:subnetId/ips', ipam.listIPs);
 router.put('/prefixes/:id/subnets/:subnetId/ips/:ipId', ipam.updateIP);
-router.delete('/prefixes/:id/subnets/:subnetId/ips/:ipId', ipam.deleteIP);
+// router.delete('/prefixes/:id/subnets/:subnetId/ips/:ipId', ipam.deleteIP);
 
 module.exports = router;
