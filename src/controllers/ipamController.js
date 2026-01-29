@@ -91,8 +91,8 @@ async function createPrefix(req, res, next) {
     const values = [
       p.prefix,
       p.site_uuid,
-      p.vrf_uuid,
-      p.vlan_uuid,
+      p.vrf_uuid || null,
+      p.vlan_uuid || null,
       p.role,
       p.tags || null,
       p.tenant,
@@ -388,8 +388,8 @@ async function createSubnet(req, res, next) {
       prefixId,
       p.subnet,
       p.site_uuid,
-      p.vrf_uuid,
-      p.vlan_uuid,
+      p.vrf_uuid || null,
+      p.vlan_uuid || null,
       p.role,
       p.tags || null,
       p.description || null,
@@ -824,7 +824,15 @@ async function listIPs(req, res, next) {
     }
 
     const rows = (await db.query(
-      'SELECT * FROM ips WHERE subnets_uuid = $1 AND orgid = $2 ORDER BY ip',
+      `SELECT ips.ip,ips.subnets_uuid,ips.status, ips.hostname, ips.is_gateway, ips.description,
+      json_build_object('uuid', ips.vrf_uuid, 'name', v.name) as vrf,
+      json_build_object('uuid', ips.vlan_uuid, 'name', l.name) as vlan,
+      ips.tags, ips.tenant, ips.tenantgroup, ips.orgid, ips.createdat, ips.updatedat, 
+      ips.user_id
+      FROM ips 
+      left outer join vrfs v on ips.vrf_uuid = v.uuid
+      left outer join vlans l on ips.vlan_uuid = l.uuid
+      WHERE ips.subnets_uuid = $1 AND ips.orgid = $2 ORDER BY ips.ip`,
       [subnetId, req.orgid]
     )).rows;
     res.json({ items: rows });
@@ -887,7 +895,7 @@ async function updateIP(req, res, next) {
     //     return res.status(400).json({ error: 'invalid IP address format' });
     //   }
     // }
-    const newpayload = await common.allowedUpdateKeys(payload, ['status']);
+    const newpayload = await common.allowedUpdateKeys(payload, ['status','hostname','decription','vrf_uuid','vlan_uuid','is_gateway','tags','tenant','tenantgroup']);
     
     const keys = Object.keys(newpayload);
     const values = Object.values(newpayload);

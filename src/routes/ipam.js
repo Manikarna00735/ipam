@@ -12,8 +12,6 @@ router.use(requireOrg);
 router.post('/prefixes', requireFieldsTypes({ 
   prefix: 'string', 
   site_uuid: 'string', 
-  vrf_uuid: 'string', 
-  vlan_uuid: 'string', 
   role: 'string', 
   tenant: 'string', 
   status: 'string' 
@@ -27,8 +25,6 @@ router.delete('/prefixes/:id', ipam.deletePrefix);
 router.post('/prefixes/:id/subnets', requireFieldsTypes({ 
   subnet: 'string', 
   site_uuid: 'string', 
-  vrf_uuid: 'string', 
-  vlan_uuid: 'string', 
   role: 'string', 
   tenant: 'string', 
   status: 'string' 

@@ -1,5 +1,10 @@
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
+
 -- create providers table
 -- mandatory fields: name, slug, orgid, user_id
+DROP TABLE IF exists providers;
 CREATE TABLE IF NOT EXISTS providers (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
@@ -20,6 +25,7 @@ CREATE TABLE IF NOT EXISTS providers (
 
 -- create regions table
 -- mandatory fields: name, slug, orgid, user_id
+DROP TABLE IF exists regions;
 CREATE TABLE IF NOT EXISTS regions (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
@@ -27,8 +33,6 @@ CREATE TABLE IF NOT EXISTS regions (
   description text,
   tagscsv text,
   sitescount integer,
-  parent_uuid uuid,
-  parent_name text,
   orgid varchar(128),
   isactive boolean default true,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -37,22 +41,20 @@ CREATE TABLE IF NOT EXISTS regions (
   unique(orgid,slug)
 );
 
+
 -- create sites table
 -- mandatory fields: name, slug, status, orgid, user_id
+DROP TABLE IF exists sites;
 CREATE TABLE IF NOT EXISTS sites (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   slug text not null,
-  "group" text,
   description text,
-  asn text,
   tagscsv text,
   tenant text,
   tenantgroup text,
-  timezone text,
-  region text,
-  location text,
-  facility text,
+  region_uuid uuid references regions("uuid"),
+  location_uuid uuid ,
   physicaladdress text,
   shippingaddress text,
   orgid varchar(128),
@@ -66,19 +68,18 @@ CREATE TABLE IF NOT EXISTS sites (
 
 -- create locations table
 -- mandatory fields: name, slug, status, site, orgid, user_id
+DROP TABLE IF exists locations;
 CREATE TABLE IF NOT EXISTS locations (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   slug text not null,
   description text,
-  site text,
+  site_uuid uuid references sites("uuid"),
   rackscount int,
   devicescount int,
   tagscsv text,
   tenant text,
   tenantgroup text,
-  parentid text,
-  docid text,
   orgid varchar(128),
   status text not null,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -87,15 +88,16 @@ CREATE TABLE IF NOT EXISTS locations (
   unique(orgid,slug)
 );
 
+
 --create manufacturers table
 -- mandatory fields: name, slug, orgid, user_id
+DROP TABLE IF exists manufacturers;
 CREATE TABLE IF NOT EXISTS manufacturers (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   slug text not null,
   description text,
   tags text,
-  docid text,
   orgid varchar(128),
   isactive boolean default true,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -106,17 +108,14 @@ CREATE TABLE IF NOT EXISTS manufacturers (
 
 --create platforms table
 -- mandatory fields: name, slug, orgid, user_id
+DROP TABLE IF exists platforms;
 CREATE TABLE IF NOT EXISTS platforms (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   slug text not null,
   description text,
   tags text,
-  manufacturer text,
-  configtemplate text,
-  napalmdriver text,
-  napalmarguments text,
-  docid text,
+  manufacturer_uuid uuid references manufacturers("uuid"),
   orgid varchar(128),
   isactive boolean default true,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -126,19 +125,16 @@ CREATE TABLE IF NOT EXISTS platforms (
 );
 
 -- create vlans table
--- mandatory fields: name, status, vid, orgid, user_id
+-- mandatory fields: name, status, orgid, user_id
+DROP TABLE IF exists vlans;
 CREATE TABLE IF NOT EXISTS vlans (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   role text,
   status text not null,
   description text,
-  vid text not null,
-  vlangroup text,
   tag text,
   tenant text,
-  tenantgroup text,
-  docid text,
   orgid varchar(128),
   comments text,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -147,18 +143,16 @@ CREATE TABLE IF NOT EXISTS vlans (
 );
 
 -- create vrfs table
--- mandatory fields: name, vfsid, orgid, user_id
+-- mandatory fields: name, orgid, user_id
+DROP TABLE IF exists vrfs;
 CREATE TABLE IF NOT EXISTS vrfs (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   description text,
-  vfsid text not null,
   tag text,
   tenant text,
-  tenantgroup text,
   importtarget text,
   exporttarget text,
-  docid text,
   orgid varchar(128),
   comments text,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -168,31 +162,25 @@ CREATE TABLE IF NOT EXISTS vrfs (
 
 -- create racks table
 -- mandatory fields: name, slug, site, status, orgid, user_id
+DROP TABLE IF exists racks;
 CREATE TABLE IF NOT EXISTS racks (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   slug text not null,
-  site text not null,
+  site uuid references sites("uuid"),
   description text,
   assettag text,
   tagscsv text,
   tenant text,
   facilityid text,
   role text,
-  type text,
-  location text,
+  location uuid references locations ("uuid"),
   heightu integer,
   widthin integer,
-  maxweightkg integer,
-  rackweightkg integer,
-  totalweightkg integer,
-  mountingdepthmm integer,
-  outerdepthmm integer,
-  outerwidthmm integer,
+  depth integer,
   powerutilization integer,
   spaceutilization integer,
   serialnumber text,
-  devices jsonb,
   orgid varchar(128),
   comments text,
   status text not null,
@@ -204,31 +192,31 @@ CREATE TABLE IF NOT EXISTS racks (
 
 -- create devices table
 -- mandatory fields: name, site, devicetype, devicerole, orgid, user_id
+DROP TABLE IF exists devices;
 CREATE TABLE IF NOT EXISTS devices (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
-  site text not null,
-  devicetype text not null,
-  devicerole text not null,
+  site uuid references sites("uuid"),
+  devicetype text,
+  role text not null,
   description text,
   assettag text,
   tag text,
   tenant text,
   tenantgroup text,
-  manufacturer text,
+  manufacturer uuid references manufacturers("uuid"),
+  interfaces text,
+  ips text,
   airflow text,
   cluster text,
-  configtemplate text,
   face text,
-  managementstatus text,
-  platform text,
-  rack text,
+  platform uuid references platforms("uuid"),
+  rack uuid references racks("uuid"),
   serialno text,
   services text,
-  location text,
+  location uuid references locations("uuid"),
   position text,
   virtualchassis text,
-  docid text,
   orgid varchar(128),
   comments text,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -238,6 +226,7 @@ CREATE TABLE IF NOT EXISTS devices (
 
 -- create wireless table
 -- mandatory fields: ssid, status, orgid, user_id
+DROP TABLE IF exists wireless;
 CREATE TABLE IF NOT EXISTS wireless (
   uuid uuid PRIMARY key default gen_random_uuid(),
   ssid text not null,
@@ -245,12 +234,11 @@ CREATE TABLE IF NOT EXISTS wireless (
   tag text,
   tenant text,
   tenantgroup text,
-  vlan text,
+  vlan uuid references vlans("uuid"),
   "group" text,
   presharekey text,
   authtype text,
   authcipher text,
-  docid text,
   interfaces jsonb,
   orgid varchar(128),
   comments text,
@@ -262,34 +250,31 @@ CREATE TABLE IF NOT EXISTS wireless (
 
 -- create interfaces table
 -- mandatory fields: name, device, type, orgid, user_id
+DROP TABLE IF exists interfaces;
 CREATE TABLE IF NOT EXISTS interfaces (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
-  device text not null,
+  device uuid references devices("uuid"),
   type text not null,
   description text,
+  speed text,
   bridgeinterface text,
   channelfrequency text,
   channelwidth text,
-  duplex text,
   laginterface text,
   label text,
   mac text,
-  module text,
   mtu text,
   parentinterface text,
   poemode text,
   poetype text,
-  speed text,
   tags text,
   transmitpower text,
-  vrf text,
+  vrf uuid references vrfs("uuid"),
   virtualdevicecontext text,
   wirelesschannel text,
   wirelesslangroup text,
   wirelessrole text,
-  wwn text,
-  docid text,
   orgid varchar(128),
   comments text,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -302,23 +287,16 @@ CREATE TABLE IF NOT EXISTS interfaces (
 DROP TABLE IF EXISTS circuits;
 CREATE TABLE IF NOT EXISTS circuits (
   uuid uuid PRIMARY key default gen_random_uuid(),
-  circuitid text not null,
-  circuitreplaced text,
-  circuitreplacedby text,
   commitrate text,
   customerip text,
   description text,
-  evc text,
   gatewayip text,
   installed date,
-  lanblock text,
   ordernumber text,
-  provider text not null,
+  provider uuid references providers("uuid"),
   provideraccount text,
-  sidez text,
   tags text,
   tenant text,
-  tenantgroup text,
   terminates date,
   type text not null,
   orgid varchar(128),
@@ -378,7 +356,16 @@ CREATE TABLE IF NOT EXISTS ips(
   ip inet not null,
   orgid varchar(128),
   status text default 'available',
+  hostname text,
+  description text,
+  vrf_uuid uuid REFERENCES vrfs("uuid"),
+  vlan_uuid uuid REFERENCES vlans("uuid"),
+  is_gateway boolean,
+  tags text,
+  tenant text,
+  tenantgroup text,
   createdat TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updatedat TIMESTAMP WITH TIME zone,
   user_id varchar(128)
 );
+
