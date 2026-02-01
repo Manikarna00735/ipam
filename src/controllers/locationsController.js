@@ -3,9 +3,13 @@ const db = require('../db');
 async function createLocations(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO locations (name, slug, description, site, rackscount, devicescount, tagscsv, tenant, tenantgroup, parentid, docid, orgid, status, updatedat, user_id) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,current_timestamp,$14) RETURNING *`;
-    const values = [payload.name, payload.slug, payload?.description || null, payload?.site || null, payload?.rackscount || null, payload?.devicescount || null, payload?.tagscsv || null, payload?.tenant || null, payload?.tenantgroup || null, payload?.parentid || null, payload?.docid || null, req.orgid, payload?.status || null, req.user ? req.user.user_id : null];
+    const sql = `INSERT INTO locations (name, slug, description, site_uuid, rackscount, 
+    devicescount, tagscsv, tenant, tenantgroup, orgid, status, updatedat, user_id) 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,current_timestamp,$12) RETURNING *`;
+    const values = [payload.name, payload.slug, payload?.description || null, payload?.site_uuid || null,
+       payload?.rackscount || null, payload?.devicescount || null, payload?.tagscsv || null, 
+       payload?.tenant || null, payload?.tenantgroup || null, req.orgid, payload?.status || null, 
+       req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
@@ -13,14 +17,24 @@ async function createLocations(req, res, next) {
 
 async function listLocations(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM locations WHERE orgid = $1 ORDER BY name', [req.orgid])).rows;
+    const rows = (await db.query(`SELECT l.uuid, l.name, l.slug, l.description, l.rackscount, 
+      l.devicescount, l.tagscsv, l.tenant, l.tenantgroup, l.orgid, l.status, l.createdat, l.updatedat, l.user_id,
+      jsonb_build_object('uuid', s.uuid, 'name', s.name) as site
+      FROM locations l 
+      left join sites s on l.site_uuid = s.uuid
+      WHERE l.orgid = $1 ORDER BY l.name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getLocation(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM locations WHERE orgid = $1 and uuid = $2 ORDER BY name', [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT l.uuid, l.name, l.slug, l.description, l.rackscount, 
+      l.devicescount, l.tagscsv, l.tenant, l.tenantgroup, l.orgid, l.status, l.createdat, l.updatedat, l.user_id,
+      jsonb_build_object('uuid', s.uuid, 'name', s.name) as site
+      FROM locations l 
+      left join sites s on l.site_uuid = s.uuid
+      WHERE l.orgid = $1 and l.uuid = $2 ORDER BY l.name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

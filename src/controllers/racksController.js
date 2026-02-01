@@ -3,47 +3,35 @@ const db = require('../db');
 async function createRacks(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO racks (name, slug, site, description, comments, assettag,
+    const sql = `INSERT INTO racks (name, slug, site_uuid, description, assettag,
     tagscsv, 
     tenant,
     facilityid,
     role,
-    type,
-    location,
+    location_uuid,
     heightu,
     widthin,
-    maxweightkg,
-    rackweightkg,
-    totalweightkg,
-    mountingdepthmm,
-    outerdepthmm,
-    outerwidthmm,
+    depth,
     powerutilization,
     spaceutilization,
     serialnumber,
-    devices,
+    comments,
     status, orgid, user_id, updatedat) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,current_timestamp) RETURNING *`;
-    const values = [payload.name, payload.slug, payload.site, payload?.description || null, payload?.comments || null, 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,current_timestamp) RETURNING *`;
+    const values = [payload.name, payload.slug, payload.site_uuid, payload?.description || null, 
     payload?.assettag || null,
     payload?.tagscsv || null, 
     payload?.tenant || null,
     payload?.facilityid || null,
     payload?.role || null,
-    payload?.type || null,
-    payload?.location || null,
+    payload?.location_uuid || null,
     payload?.heightu || null,
     payload?.widthin || null,
-    payload?.maxweightkg || null,
-    payload?.rackweightkg || null,
-    payload?.totalweightkg || null,
-    payload?.mountingdepthmm || null,
-    payload?.outerdepthmm || null,
-    payload?.outerwidthmm || null,
+    payload?.depth || null,
     payload?.powerutilization || null,
     payload?.spaceutilization || null,
     payload?.serialnumber || null,
-    payload?.devices || null,
+    payload?.comments || null,
     payload.status,
     req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
@@ -53,14 +41,30 @@ async function createRacks(req, res, next) {
 
 async function listRacks(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM racks WHERE orgid = $1 ORDER BY name', [req.orgid])).rows;
+    const rows = (await db.query(`SELECT r.uuid, r.name, r.slug, r.description, r.assettag,
+    r.tagscsv,r.tenant,r.facilityid,r.role, r.heightu, r.widthin, r.depth, r.powerutilization, r.spaceutilization,
+    r.serialnumber, r.comments, r.status, r.createdat, r.updatedat, r.orgid, r.user_id,
+    jsonb_build_object('uuid', s.uuid, 'name', s.name) as site,
+    jsonb_build_object('uuid', l.uuid, 'name', l.name) as location
+    FROM racks r
+    left join sites s on r.site_uuid = s.uuid
+    left join locations l on r.location_uuid = l.uuid 
+    WHERE r.orgid = $1 ORDER BY r.name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getRack(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM racks WHERE orgid = $1 and uuid = $2 ORDER BY name', [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT r.uuid, r.name, r.slug, r.description, r.assettag,
+    r.tagscsv,r.tenant,r.facilityid,r.role, r.heightu, r.widthin, r.depth, r.powerutilization, r.spaceutilization,
+    r.serialnumber, r.comments, r.status, r.createdat, r.updatedat, r.orgid, r.user_id,
+    jsonb_build_object('uuid', s.uuid, 'name', s.name) as site,
+    jsonb_build_object('uuid', l.uuid, 'name', l.name) as location
+    FROM racks r
+    left join sites s on r.site_uuid = s.uuid
+    left join locations l on r.location_uuid = l.uuid 
+    WHERE r.orgid = $1 and r.uuid = $2 ORDER BY r.name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

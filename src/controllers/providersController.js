@@ -3,7 +3,8 @@ const db = require('../db');
 async function createProviders(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO providers (name, slug, description, comments, asnscsv, tagscsv, orgid, user_id, updatedat) 
+    const sql = `INSERT INTO providers (name, slug, description, comments, asnscsv, 
+    tagscsv, orgid, user_id, updatedat) 
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,current_timestamp) RETURNING *`;
     const values = [payload.name, payload.slug, payload?.description || '', payload?.comments || '', payload?.asnscsv || '', payload?.tagscsv || '', req.orgid, req.user.user_id];
     const result = await db.query(sql, values);

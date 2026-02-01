@@ -3,12 +3,13 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { requireOrg } = require('../middleware/org');
 const regions = require('../controllers/regionsController');
+const { requireFieldsTypes } = require('../middleware/validators');
 
 router.use(requireAuth);
 router.use(requireOrg);
 
 
-router.post('/', regions.createRegions);
+router.post('/', requireFieldsTypes({ name: 'string', slug: 'string'}), regions.createRegions);
 router.get('/', regions.listRegions);
 router.get('/:id', regions.getRegion);
 router.put('/:id', regions.updateRegion);

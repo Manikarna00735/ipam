@@ -3,9 +3,15 @@ const db = require('../db');
 async function createWireless(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO wireless (ssid, description, tag, tenant, tenantgroup, vlan, "group", presharekey, authtype, authcipher, docid, interfaces, orgid, comments, status, createdat, updatedat, user_id) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,current_timestamp,current_timestamp,$16) RETURNING *`;
-    const values = [payload.ssid, payload.description || null, payload.tag || null, payload.tenant || null, payload.tenantgroup || null, payload.vlan || null, payload.group || null, payload.presharekey || null, payload.authtype || null, payload.authcipher || null, payload.docid || null, payload.interfaces || null, req.orgid, payload.comments || null, payload.status || null, req.user ? req.user.user_id : null];
+    const sql = `INSERT INTO wireless (ssid, description, tag, tenant, tenantgroup, vlan_uuid, "group",
+     presharekey, authtype, authcipher, interfaces, orgid, comments, status,
+     updatedat, user_id) 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,current_timestamp,$15) RETURNING *`;
+    const values = [payload.ssid, payload.description || null, payload.tag || null, 
+      payload.tenant || null, payload.tenantgroup || null, payload.vlan || null, payload.group || null,
+      payload.presharekey || null, payload.authtype || null, payload.authcipher || null, 
+      payload.interfaces || null, req.orgid, payload.comments || null, 
+      payload.status || null, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
@@ -13,14 +19,26 @@ async function createWireless(req, res, next) {
 
 async function listWireless(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM wireless WHERE orgid = $1 ORDER BY ssid', [req.orgid])).rows;
+    const rows = (await db.query(`SELECT w.uuid, w.ssid, w.description, w.tag, w.tenant, w.tenantgroup,
+      w."group", w.presharekey, w.authtype, w.authcipher, w.interfaces, w.orgid,
+      w.comments, w.status, w.updatedat, w.user_id,
+      jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan
+      FROM wireless w
+      left join vlans v on w.vlan_uuid = v.uuid
+      WHERE w.orgid = $1 ORDER BY w.ssid`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getWireless(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM wireless WHERE orgid = $1 and uuid = $2 ORDER BY ssid', [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT w.uuid, w.ssid, w.description, w.tag, w.tenant, w.tenantgroup,
+      w."group", w.presharekey, w.authtype, w.authcipher, w.interfaces, w.orgid,
+      w.comments, w.status, w.updatedat, w.user_id,
+      jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan
+      FROM wireless w
+      left join vlans v on w.vlan_uuid = v.uuid
+      WHERE w.orgid = $1 and w.uuid = $2 ORDER BY w.ssid`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

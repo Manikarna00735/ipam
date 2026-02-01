@@ -3,9 +3,9 @@ const db = require('../db');
 async function createManufacturers(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO manufacturers (name, slug, description, tags, docid, orgid, user_id, updatedat) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,current_timestamp) RETURNING *`;
-    const values = [payload.name, payload.slug, payload?.description || null,  payload?.tags || null, payload?.docid || null, req.orgid, req.user ? req.user.user_id : null];
+    const sql = `INSERT INTO manufacturers (name, slug, description, tags, orgid, user_id, updatedat) 
+    VALUES ($1,$2,$3,$4,$5,$6,current_timestamp) RETURNING *`;
+    const values = [payload.name, payload.slug, payload?.description || null,  payload?.tags || null, req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     const created = result.rows[0];
     res.status(201).json(created);

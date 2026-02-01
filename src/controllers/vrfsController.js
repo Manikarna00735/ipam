@@ -3,9 +3,13 @@ const db = require('../db');
 async function createVrfs(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO vrfs (name, description, vfsid, tag, tenant, tenantgroup, importtarget, exporttarget, docid, orgid, comments, updatedat, user_id) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,current_timestamp,$12) RETURNING *`;
-    const values = [payload.name, payload?.description || null, payload?.vfsid || payload?.slug || null, payload?.tag || payload?.tagscsv || null, payload?.tenant || null, payload?.tenantgroup || null, payload?.importtarget || null, payload?.exporttarget || null, payload?.docid || null, req.orgid, payload?.comments || null, req.user ? req.user.user_id : null];
+    const sql = `INSERT INTO vrfs (name, description, tag, tenant, importtarget,
+     exporttarget, orgid, comments, updatedat, user_id) 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,current_timestamp,$9) RETURNING *`;
+    const values = [payload.name, payload?.description || null,
+      payload?.tag || payload?.tagscsv || null, payload?.tenant || null, 
+      payload?.importtarget || null, payload?.exporttarget || null,
+      req.orgid, payload?.comments || null, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }

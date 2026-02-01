@@ -52,7 +52,15 @@ app.use((err, req, res, next) => {
 
 
 io.on('connection', (socket) => {
+  const orgid = socket.handshake.query.orgid;
   console.log('ws client connected', socket.id);
+
+  if (orgid) {
+    // 2. The socket "joins" a specific channel
+    socket.join(`org_${orgid}`);
+    console.log(`Client ${socket.id} joined room: org_${orgid}`);
+  }
+
   socket.on('disconnect', () => console.log('ws client disconnected', socket.id));
 });
 

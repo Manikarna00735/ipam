@@ -3,28 +3,20 @@ const db = require('../db');
 async function createSites(req, res, next) {
   try {
     const p = req.body || {};
-    // required fields
-    if (!p.name || !p.slug || typeof p.status === 'undefined') {
-      return res.status(400).json({ error: 'missing required fields: name, slug, status' });
-    }
     const sql = `INSERT INTO sites (
-      name, slug, "group", description, asn, tagscsv, tenant, tenantgroup,
-      timezone, region, location, facility, physicaladdress, shippingaddress,
+      name, slug, description, tagscsv, tenant, tenantgroup,
+      region_uuid, location_uuid, physicaladdress, shippingaddress,
       orgid, comments, status, user_id, updatedat
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,current_timestamp) RETURNING *`;
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,current_timestamp) RETURNING *`;
     const values = [
       p.name,
       p.slug,
-      p.group || null,
       p.description || null,
-      p.asn || null,
       p.tagscsv || null,
       p.tenant || null,
       p.tenantgroup || null,
-      p.timezone || null,
       p.region || null,
       p.location || null,
-      p.facility || null,
       p.physicaladdress || null,
       p.shippingaddress || null,
       req.orgid || null,
@@ -39,14 +31,28 @@ async function createSites(req, res, next) {
 
 async function listSites(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM sites WHERE orgid = $1 ORDER BY name', [req.orgid])).rows;
+    const rows = (await db.query(`SELECT s.uuid, s.name, s.slug, s.description, s.tagscsv, s.tenant, s.tenantgroup, 
+      s.physicaladdress, s.shippingaddress, s.comments, s.status, s.createdat, s.updatedat, s.orgid, s.user_id,
+      jsonb_build_object('uuid', l.uuid, 'name', l.name) as location,
+      jsonb_build_object('uuid', r.uuid, 'name', r.name) as region
+      FROM sites s
+      left join locations l on s.location_uuid = l.uuid
+      left join regions r on s.region_uuid = r.uuid
+      WHERE s.orgid = $1 ORDER BY s.name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getSite(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM sites WHERE orgid = $1 and uuid = $2 ORDER BY name', [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT s.uuid, s.name, s.slug, s.description, s.tagscsv, s.tenant, s.tenantgroup, 
+      s.physicaladdress, s.shippingaddress, s.comments, s.status, s.createdat, s.updatedat, s.orgid, s.user_id,
+      jsonb_build_object('uuid', l.uuid, 'name', l.name) as location,
+      jsonb_build_object('uuid', r.uuid, 'name', r.name) as region
+      FROM sites s
+      left join locations l on s.location_uuid = l.uuid
+      left join regions r on s.region_uuid = r.uuid
+      WHERE s.orgid = $1 and s.uuid = $2 ORDER BY s.name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

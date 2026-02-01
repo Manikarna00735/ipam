@@ -8,7 +8,7 @@ const { requireFieldsTypes } = require('../middleware/validators');
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({ name: 'string', devicetype: 'string', devicerole: 'string', site: 'string' }), devices.createDevices);
+router.post('/', requireFieldsTypes({ name: 'string', devicetype: 'string', role: 'string', site_uuid: 'uuid' }), devices.createDevices);
 router.get('/', devices.listDevices);
 router.get('/:id', devices.getDevice);
 router.put('/:id', devices.updateDevice);

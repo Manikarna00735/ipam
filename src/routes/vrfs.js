@@ -8,7 +8,7 @@ const { requireFieldsTypes } = require('../middleware/validators');
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({ vfsid: 'string', name: 'string' }), vrfs.createVrfs);
+router.post('/', requireFieldsTypes({ name: 'string' }), vrfs.createVrfs);
 router.get('/', vrfs.listVrfs);
 router.get('/:id', vrfs.getVrf);
 router.put('/:id', vrfs.updateVrf);

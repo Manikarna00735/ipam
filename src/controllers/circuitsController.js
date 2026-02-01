@@ -3,9 +3,15 @@ const db = require('../db');
 async function createCircuits(req, res, next) {
   try {
     const payload = req.body || {};
-    const sql = `INSERT INTO circuits (circuitid, provider, type, status, comments, orgid, user_id, updatedat) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,current_timestamp) RETURNING *`;
-    const values = [payload.circuitid || payload.name || null, payload.provider || null, payload.type || null, payload.status || null, payload?.comments || null, req.orgid, req.user ? req.user.user_id : null];
+    const sql = `INSERT INTO circuits (commitrate,customerip, description, gatewayip, installed, ordernumber,
+    provider_uuid, provideraccount,tags, tenant, terminates, type, status, comments, orgid, user_id, updatedat) 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,current_timestamp) RETURNING *`;
+    const values = [payload.commitrate || null,
+    payload.customerip || null, payload.description || null, payload.gatewayip || null,
+    payload.installed || null, payload.ordernumber, payload.provider,
+    payload.provideraccount || null, payload.tags || null, payload.tenant || null,
+    payload.terminates || null,
+    payload.type, payload.status, payload?.comments || null, req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
@@ -13,14 +19,24 @@ async function createCircuits(req, res, next) {
 
 async function listCircuits(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM circuits WHERE orgid = $1 ORDER BY circuitid', [req.orgid])).rows;
+    const rows = (await db.query(`SELECT c.commitrate, c.customerip, c.description, c.gatewayip, c.installed, c.ordernumber,
+      jsonb_build_object('uuid', p.uuid, 'name', p.name) as provider, c.provideraccount, c.tags, c.tenant, c.terminates, c.type, c.status, c.comments, c.orgid, c.user_id, 
+      c.createdat, c.updatedat
+      FROM circuits c
+      left JOIN providers p ON c.provider_uuid = p.uuid
+      WHERE c.orgid = $1 ORDER BY c.uuid`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getCircuit(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM circuits WHERE orgid = $1 and uuid = $2 ORDER BY circuitid', [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT c.commitrate, c.customerip, c.description, c.gatewayip, c.installed, c.ordernumber,
+      jsonb_build_object('uuid', p.uuid, 'name', p.name) as provider, c.provideraccount, c.tags, c.tenant, c.terminates, c.type, c.status, c.comments, c.orgid, c.user_id, 
+      c.createdat, c.updatedat
+      FROM circuits c
+      left JOIN providers p ON c.provider_uuid = p.uuid
+      WHERE c.orgid = $1 and c.uuid = $2 ORDER BY c.uuid`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

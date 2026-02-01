@@ -106,7 +106,7 @@ async function createPrefix(req, res, next) {
     const createdPrefix = result.rows[0];
     
     // Emit real-time event
-    realtime.emit('prefixes:created', createdPrefix);
+    realtime.emit(`org_${req.orgid}`,'prefixes:created', createdPrefix);
     
     res.status(201).json(createdPrefix);
   } catch (err) { next(err); }
@@ -191,7 +191,7 @@ async function updatePrefix(req, res, next) {
     const updatedPrefix = result.rows[0];
     
     // Emit real-time event
-    realtime.emit('prefixes:updated', updatedPrefix);
+    realtime.emit(`org_${req.orgid}`,'prefixes:updated', updatedPrefix);
     
     res.json(updatedPrefix);
   } catch (err) { next(err); }
@@ -215,7 +215,7 @@ async function deletePrefix(req, res, next) {
     await db.query('DELETE FROM networks WHERE uuid = $1', [id]);
     
     // Emit real-time event
-    realtime.emit('prefixes:deleted', { id, org_id: req.orgid });
+    realtime.emit(`org_${req.orgid}`,'prefixes:deleted', { id, org_id: req.orgid });
     
     res.status(204).send();
   } catch (err) { next(err); }
@@ -412,7 +412,7 @@ async function createSubnet(req, res, next) {
     );
     
     // Emit real-time event
-    realtime.emit('subnets:created', createdSubnet);
+    realtime.emit(`org_${req.orgid}`,'subnets:created', createdSubnet);
     
     res.status(201).json(createdSubnet);
   } catch (err) { next(err); }
@@ -506,7 +506,7 @@ async function updateSubnet(req, res, next) {
     const updatedSubnet = result.rows[0];
     
     // Emit real-time event
-    realtime.emit('subnets:updated', updatedSubnet);
+    realtime.emit(`org_${req.orgid}`,'subnets:updated', updatedSubnet);
     
     res.json(updatedSubnet);
   } catch (err) { next(err); }
@@ -536,7 +536,7 @@ async function deleteSubnet(req, res, next) {
     await db.query('DELETE FROM subnets WHERE uuid = $1', [subnetId]);
     
     // Emit real-time event
-    realtime.emit('subnets:deleted', { id: subnetId, org_id: req.orgid });
+    realtime.emit(`org_${req.orgid}`,'subnets:deleted', { id: subnetId, org_id: req.orgid });
     
     res.status(204).send();
   } catch (err) { next(err); }
@@ -682,7 +682,7 @@ async function deleteSubnet(req, res, next) {
 //     const createdIP = result.rows[0];
     
 //     // Emit real-time event
-//     realtime.emit('ips:created', createdIP);
+//     realtime.emit(`org_${req.orgid}`,'ips:created', createdIP);
     
 //     res.status(201).json(createdIP);
 //   } catch (err) { next(err); }
@@ -796,7 +796,7 @@ async function deleteSubnet(req, res, next) {
 //         results.push(result.rows[0]);
         
 //         // Emit real-time event for each created IP
-//         realtime.emit('ips:created', result.rows[0]);
+//         realtime.emit(`org_${req.orgid}`,'ips:created', result.rows[0]);
 //       }
 
 //       res.status(201).json({ items: results, count: results.length });
@@ -915,7 +915,7 @@ async function updateIP(req, res, next) {
     const updatedIP = result.rows[0];
     
     // Emit real-time event
-    realtime.emit('ips:updated', updatedIP);
+    realtime.emit(`org_${req.orgid}`,'ips:updated', updatedIP);
     
     res.json(updatedIP);
   } catch (err) { next(err); }
@@ -947,7 +947,7 @@ async function updateIP(req, res, next) {
 //     await db.query('DELETE FROM ips WHERE uuid = $1', [ipId]);
     
 //     // Emit real-time event
-//     realtime.emit('ips:deleted', { id: ipId, org_id: req.orgid });
+//     realtime.emit(`org_${req.orgid}`,'ips:deleted', { id: ipId, org_id: req.orgid });
     
 //     res.status(204).send();
 //   } catch (err) { next(err); }

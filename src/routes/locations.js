@@ -8,7 +8,7 @@ const { requireFieldsTypes } = require('../middleware/validators');
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({ name: 'string', slug: 'string', status: 'string', site: 'string' }), locations.createLocations);
+router.post('/', requireFieldsTypes({ name: 'string', slug: 'string', status: 'string', site_uuid: 'uuid' }), locations.createLocations);
 router.get('/', locations.listLocations);
 router.get('/:id', locations.getLocation);
 router.put('/:id', locations.updateLocation);

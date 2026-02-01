@@ -8,7 +8,7 @@ const { requireFieldsTypes } = require('../middleware/validators');
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({ name: 'string', slug: 'string', status: 'string', site: 'string' }), racks.createRacks);
+router.post('/', requireFieldsTypes({ name: 'string', slug: 'string', status: 'string', site_uuid: 'uuid' }), racks.createRacks);
 router.get('/', racks.listRacks);
 router.get('/:id', racks.getRack);
 router.put('/:id', racks.updateRack);

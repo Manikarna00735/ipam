@@ -1,7 +1,6 @@
 DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
 
-
 -- create providers table
 -- mandatory fields: name, slug, orgid, user_id
 DROP TABLE IF exists providers;
@@ -67,7 +66,7 @@ CREATE TABLE IF NOT EXISTS sites (
 );
 
 -- create locations table
--- mandatory fields: name, slug, status, site, orgid, user_id
+-- mandatory fields: name, slug, status, site_uuid, orgid, user_id
 DROP TABLE IF exists locations;
 CREATE TABLE IF NOT EXISTS locations (
   uuid uuid PRIMARY key default gen_random_uuid(),
@@ -161,20 +160,20 @@ CREATE TABLE IF NOT EXISTS vrfs (
 );
 
 -- create racks table
--- mandatory fields: name, slug, site, status, orgid, user_id
+-- mandatory fields: name, slug, site_uuid, status, orgid, user_id
 DROP TABLE IF exists racks;
 CREATE TABLE IF NOT EXISTS racks (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
   slug text not null,
-  site uuid references sites("uuid"),
+  site_uuid uuid references sites("uuid"),
   description text,
   assettag text,
   tagscsv text,
   tenant text,
   facilityid text,
   role text,
-  location uuid references locations ("uuid"),
+  location_uuid uuid references locations ("uuid"),
   heightu integer,
   widthin integer,
   depth integer,
@@ -191,12 +190,12 @@ CREATE TABLE IF NOT EXISTS racks (
 );
 
 -- create devices table
--- mandatory fields: name, site, devicetype, devicerole, orgid, user_id
+-- mandatory fields: name, site_uuid, devicetype, role, orgid, user_id
 DROP TABLE IF exists devices;
 CREATE TABLE IF NOT EXISTS devices (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
-  site uuid references sites("uuid"),
+  site_uuid uuid references sites("uuid"),
   devicetype text,
   role text not null,
   description text,
@@ -204,17 +203,17 @@ CREATE TABLE IF NOT EXISTS devices (
   tag text,
   tenant text,
   tenantgroup text,
-  manufacturer uuid references manufacturers("uuid"),
+  manufacturer_uuid uuid references manufacturers("uuid"),
   interfaces text,
   ips text,
   airflow text,
   cluster text,
   face text,
-  platform uuid references platforms("uuid"),
-  rack uuid references racks("uuid"),
+  platform_uuid uuid references platforms("uuid"),
+  rack_uuid uuid references racks("uuid"),
   serialno text,
   services text,
-  location uuid references locations("uuid"),
+  location_uuid uuid references locations("uuid"),
   position text,
   virtualchassis text,
   orgid varchar(128),
@@ -234,7 +233,7 @@ CREATE TABLE IF NOT EXISTS wireless (
   tag text,
   tenant text,
   tenantgroup text,
-  vlan uuid references vlans("uuid"),
+  vlan_uuid uuid references vlans("uuid"),
   "group" text,
   presharekey text,
   authtype text,
@@ -254,7 +253,7 @@ DROP TABLE IF exists interfaces;
 CREATE TABLE IF NOT EXISTS interfaces (
   uuid uuid PRIMARY key default gen_random_uuid(),
   name text not null,
-  device uuid references devices("uuid"),
+  device_uuid uuid references devices("uuid"),
   type text not null,
   description text,
   speed text,
@@ -270,7 +269,7 @@ CREATE TABLE IF NOT EXISTS interfaces (
   poetype text,
   tags text,
   transmitpower text,
-  vrf uuid references vrfs("uuid"),
+  vrf_uuid uuid references vrfs("uuid"),
   virtualdevicecontext text,
   wirelesschannel text,
   wirelesslangroup text,
@@ -283,7 +282,7 @@ CREATE TABLE IF NOT EXISTS interfaces (
 );
 
 -- create circuits table
--- mandatory fields: circuitid, provider, type, status, orgid, user_id
+-- mandatory fields: provider_uuid, type, status, orgid, user_id
 DROP TABLE IF EXISTS circuits;
 CREATE TABLE IF NOT EXISTS circuits (
   uuid uuid PRIMARY key default gen_random_uuid(),
@@ -293,7 +292,7 @@ CREATE TABLE IF NOT EXISTS circuits (
   gatewayip text,
   installed date,
   ordernumber text,
-  provider uuid references providers("uuid"),
+  provider_uuid uuid references providers("uuid"),
   provideraccount text,
   tags text,
   tenant text,
