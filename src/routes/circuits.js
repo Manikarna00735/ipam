@@ -8,7 +8,7 @@ const { requireFieldsTypes } = require('../middleware/validators');
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({provider: 'uuid', type: 'string', status: 'string'}), circuits.createCircuits);
+router.post('/', requireFieldsTypes({provider_uuid: 'uuid', type: 'string', status: 'string'}), circuits.createCircuits);
 router.get('/', circuits.listCircuits);
 router.get('/:id', circuits.getCircuit);
 router.put('/:id', circuits.updateCircuit);

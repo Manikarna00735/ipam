@@ -12,11 +12,11 @@ async function createDevices(req, res, next) {
     const values = [payload.name, payload.site_uuid, payload.devicetype || null,
       payload.role || null, payload?.description || null, 
       payload?.assettag || null, payload?.tag || null, payload?.tenant || null,
-      payload?.tenantgroup || null, payload?.manufacturer || null, payload?.interfaces || null,
+      payload?.tenantgroup || null, payload?.manufacturer_uuid || null, payload?.interfaces || null,
       payload?.ips || null,payload?.airflow || null, payload?.cluster || null, 
-      payload?.face || null, payload?.platform || null,
-      payload?.rack || null, payload?.serialno || null, payload?.services || null,
-      payload?.location || null, payload?.position || null, payload?.virtualchassis || null, 
+      payload?.face || null, payload?.platform_uuid || null,
+      payload?.rack_uuid || null, payload?.serialno || null, payload?.services || null,
+      payload?.location_uuid || null, payload?.position || null, payload?.virtualchassis || null, 
       payload?.docid || null, req.orgid, payload?.comments || null, 
       req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
@@ -26,44 +26,46 @@ async function createDevices(req, res, next) {
 
 async function listDevices(req, res, next) {
   try {
-    const rows = (await db.query(`SELECT d.name, d.uuid, d.devicetype, d.role, d.description, d.assettag, d.tag, 
-      d.tenant, d.tenantgroup, d.interfaces, d.ips, d.airflow, d.cluster, d.face, 
-      d.serialno, d.services, d.position, d.virtualchassis, d.orgid, d.comments, 
-      d.createdat, d.updatedat, d.user_id,
-      Jsonb_build_object('name', s.name, 'uuid', s.uuid) as site,
-      Jsonb_build_object('name', m.name, 'uuid', m.uuid) as manufacturer,
-      Jsonb_build_object('name', p.name, 'uuid', p.uuid) as platform,
-      Jsonb_build_object('name', r.name, 'uuid', r.uuid) as rack,
-      Jsonb_build_object('name', l.name, 'uuid', l.uuid) as location
-      FROM devices d
-      left join sites s on d.site_uuid = s.uuid
-      left join manufacturers m on d.manufacturer_uuid = m.uuid
-      left join platforms p on d.platform_uuid = p.uuid
-      left join racks r on d.rack_uuid = r.uuid
-      left join locations l on d.location_uuid = l.uuid
-      WHERE d.orgid = $1 ORDER BY d.name`, [req.orgid])).rows;
+    // const rows = (await db.query(`SELECT d.name, d.uuid, d.devicetype, d.role, d.description, d.assettag, d.tag, 
+    //   d.tenant, d.tenantgroup, d.interfaces, d.ips, d.airflow, d.cluster, d.face, 
+    //   d.serialno, d.services, d.position, d.virtualchassis, d.orgid, d.comments, 
+    //   d.createdat, d.updatedat, d.user_id,
+    //   Jsonb_build_object('name', s.name, 'uuid', s.uuid) as site,
+    //   Jsonb_build_object('name', m.name, 'uuid', m.uuid) as manufacturer,
+    //   Jsonb_build_object('name', p.name, 'uuid', p.uuid) as platform,
+    //   Jsonb_build_object('name', r.name, 'uuid', r.uuid) as rack,
+    //   Jsonb_build_object('name', l.name, 'uuid', l.uuid) as location
+    //   FROM devices d
+    //   left join sites s on d.site_uuid = s.uuid
+    //   left join manufacturers m on d.manufacturer_uuid = m.uuid
+    //   left join platforms p on d.platform_uuid = p.uuid
+    //   left join racks r on d.rack_uuid = r.uuid
+    //   left join locations l on d.location_uuid = l.uuid
+    //   WHERE d.orgid = $1 ORDER BY d.name`, [req.orgid])).rows;
+    const rows = (await db.query(`SELECT * FROM devices WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getDevice(req, res, next) {
   try {
-    const rows = (await db.query(`SELECT d.name, d.uuid, d.devicetype, d.role, d.description, d.assettag, d.tag, 
-      d.tenant, d.tenantgroup, d.interfaces, d.ips, d.airflow, d.cluster, d.face, 
-      d.serialno, d.services, d.position, d.virtualchassis, d.orgid, d.comments, 
-      d.createdat, d.updatedat, d.user_id,
-      Jsonb_build_object('name', s.name, 'uuid', s.uuid) as site,
-      Jsonb_build_object('name', m.name, 'uuid', m.uuid) as manufacturer,
-      Jsonb_build_object('name', p.name, 'uuid', p.uuid) as platform,
-      Jsonb_build_object('name', r.name, 'uuid', r.uuid) as rack,
-      Jsonb_build_object('name', l.name, 'uuid', l.uuid) as location
-      FROM devices d
-      left join sites s on d.site_uuid = s.uuid
-      left join manufacturers m on d.manufacturer_uuid = m.uuid
-      left join platforms p on d.platform_uuid = p.uuid
-      left join racks r on d.rack_uuid = r.uuid
-      left join locations l on d.location_uuid = l.uuid
-      WHERE d.orgid = $1 and d.uuid = $2 ORDER BY d.name`, [req.orgid, req.params.id])).rows;
+    // const rows = (await db.query(`SELECT d.name, d.uuid, d.devicetype, d.role, d.description, d.assettag, d.tag, 
+    //   d.tenant, d.tenantgroup, d.interfaces, d.ips, d.airflow, d.cluster, d.face, 
+    //   d.serialno, d.services, d.position, d.virtualchassis, d.orgid, d.comments, 
+    //   d.createdat, d.updatedat, d.user_id,
+    //   Jsonb_build_object('name', s.name, 'uuid', s.uuid) as site,
+    //   Jsonb_build_object('name', m.name, 'uuid', m.uuid) as manufacturer,
+    //   Jsonb_build_object('name', p.name, 'uuid', p.uuid) as platform,
+    //   Jsonb_build_object('name', r.name, 'uuid', r.uuid) as rack,
+    //   Jsonb_build_object('name', l.name, 'uuid', l.uuid) as location
+    //   FROM devices d
+    //   left join sites s on d.site_uuid = s.uuid
+    //   left join manufacturers m on d.manufacturer_uuid = m.uuid
+    //   left join platforms p on d.platform_uuid = p.uuid
+    //   left join racks r on d.rack_uuid = r.uuid
+    //   left join locations l on d.location_uuid = l.uuid
+    //   WHERE d.orgid = $1 and d.uuid = $2 ORDER BY d.name`, [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT * FROM devices WHERE orgid = $1 and uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

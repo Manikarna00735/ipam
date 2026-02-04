@@ -12,7 +12,7 @@ async function createInterfaces(req, res, next) {
       current_timestamp,current_timestamp,$25) RETURNING *`;
     const values = [
       payload.name,
-      payload.device || null,
+      payload.device_uuid || null,
       payload.type || null,
       payload.description || null,
       payload.speed || null,
@@ -28,7 +28,7 @@ async function createInterfaces(req, res, next) {
       payload.poetype || null,
       payload.tags || payload.tagscsv || null,
       payload.transmitpower || null,
-      payload.vrf || null,
+      payload.vrf_uuid || null,
       payload.virtualdevicecontext || null,
       payload.wirelesschannel || null,
       payload.wirelesslangroup || null,
@@ -44,32 +44,34 @@ async function createInterfaces(req, res, next) {
 
 async function listInterfaces(req, res, next) {
   try {
-    const rows = (await db.query(`SELECT f.uuid, f.name, f.type, f.description, f.speed, f.bridgeinterface, f.channelfrequency,
-      f.channelwidth, f.laginterface, f.label, f.mac, f.mtu, f.parentinterface, f.poemode, f.poetype, f.tags,
-      f.transmitpower, f.virtualdevicecontext, f.wirelesschannel, f.wirelesslangroup, f.wirelessrole,
-      f.orgid, f.comments, f.createdat, f.updatedat,f.user_id,
-      json_build_object('uuid', d.uuid,'name', d.name) as device,
-      json_build_object('uuid', v.uuid,'name', v.name) as vrf
-      FROM interfaces f
-      left JOIN devices d ON f.device_uuid = d.uuid
-      left JOIN vrfs v ON f.vrf_uuid = v.uuid
-      WHERE f.orgid = $1 ORDER BY f.name`, [req.orgid])).rows;
+    // const rows = (await db.query(`SELECT f.uuid, f.name, f.type, f.description, f.speed, f.bridgeinterface, f.channelfrequency,
+    //   f.channelwidth, f.laginterface, f.label, f.mac, f.mtu, f.parentinterface, f.poemode, f.poetype, f.tags,
+    //   f.transmitpower, f.virtualdevicecontext, f.wirelesschannel, f.wirelesslangroup, f.wirelessrole,
+    //   f.orgid, f.comments, f.createdat, f.updatedat,f.user_id,
+    //   json_build_object('uuid', d.uuid,'name', d.name) as device,
+    //   json_build_object('uuid', v.uuid,'name', v.name) as vrf
+    //   FROM interfaces f
+    //   left JOIN devices d ON f.device_uuid = d.uuid
+    //   left JOIN vrfs v ON f.vrf_uuid = v.uuid
+    //   WHERE f.orgid = $1 ORDER BY f.name`, [req.orgid])).rows;
+    const rows = (await db.query(`SELECT * FROM interfaces WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getInterface(req, res, next) {
   try {
-    const rows = (await db.query(`select f.uuid, f.name, f.type, f.description, f.speed, f.bridgeinterface, f.channelfrequency,
-      f.channelwidth, f.laginterface, f.label, f.mac, f.mtu, f.parentinterface, f.poemode, f.poetype, f.tags,
-      f.transmitpower, f.virtualdevicecontext, f.wirelesschannel, f.wirelesslangroup, f.wirelessrole,
-      f.orgid, f.comments, f.createdat, f.updatedat,f.user_id,
-      json_build_object('uuid', d.uuid,'name', d.name) as device,
-      json_build_object('uuid', v.uuid,'name', v.name) as vrf
-      FROM interfaces f
-      left JOIN devices d ON f.device_uuid = d.uuid
-      left JOIN vrfs v ON f.vrf_uuid = v.uuid
-      WHERE f.orgid = $1 and f.uuid = $2 ORDER BY f.name`, [req.orgid, req.params.id])).rows;
+    // const rows = (await db.query(`select f.uuid, f.name, f.type, f.description, f.speed, f.bridgeinterface, f.channelfrequency,
+    //   f.channelwidth, f.laginterface, f.label, f.mac, f.mtu, f.parentinterface, f.poemode, f.poetype, f.tags,
+    //   f.transmitpower, f.virtualdevicecontext, f.wirelesschannel, f.wirelesslangroup, f.wirelessrole,
+    //   f.orgid, f.comments, f.createdat, f.updatedat,f.user_id,
+    //   json_build_object('uuid', d.uuid,'name', d.name) as device,
+    //   json_build_object('uuid', v.uuid,'name', v.name) as vrf
+    //   FROM interfaces f
+    //   left JOIN devices d ON f.device_uuid = d.uuid
+    //   left JOIN vrfs v ON f.vrf_uuid = v.uuid
+    //   WHERE f.orgid = $1 and f.uuid = $2 ORDER BY f.name`, [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT * FROM interfaces WHERE orgid = $1 AND uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

@@ -8,7 +8,7 @@ async function createCircuits(req, res, next) {
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,current_timestamp) RETURNING *`;
     const values = [payload.commitrate || null,
     payload.customerip || null, payload.description || null, payload.gatewayip || null,
-    payload.installed || null, payload.ordernumber, payload.provider,
+    payload.installed || null, payload.ordernumber, payload.provider_uuid,
     payload.provideraccount || null, payload.tags || null, payload.tenant || null,
     payload.terminates || null,
     payload.type, payload.status, payload?.comments || null, req.orgid, req.user ? req.user.user_id : null];

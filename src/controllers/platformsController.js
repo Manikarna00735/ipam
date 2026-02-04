@@ -5,7 +5,7 @@ async function createPlatforms(req, res, next) {
     const payload = req.body || {};
     const sql = `INSERT INTO platforms (name, slug, description, tags, manufacturer_uuid, orgid, user_id, updatedat) 
     VALUES ($1,$2,$3,$4,$5,$6,$7,current_timestamp) RETURNING *`;
-    const values = [payload.name, payload.slug, payload?.description || null, payload?.tags || null, payload?.manufacturer || null, 
+    const values = [payload.name, payload.slug, payload?.description || null, payload?.tags || null, payload?.manufacturer_uuid || null, 
     req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);
@@ -14,24 +14,26 @@ async function createPlatforms(req, res, next) {
 
 async function listPlatforms(req, res, next) {
   try {
-    const rows = (await db.query(`SELECT p.uuid, p.name, p.slug, p.description, p.tags, 
-      p.orgid,p.createdat, p.updatedat, p.user_id, 
-      jsonb_build_object('uuid', m.uuid, 'name', m.name) as manufacturer
-      FROM platforms p
-      left join manufacturers m on p.manufacturer_uuid = m.uuid
-      WHERE p.orgid = $1 ORDER BY p.name`, [req.orgid])).rows;
+    // const rows = (await db.query(`SELECT p.uuid, p.name, p.slug, p.description, p.tags, 
+    //   p.orgid,p.createdat, p.updatedat, p.user_id, 
+    //   jsonb_build_object('uuid', m.uuid, 'name', m.name) as manufacturer
+    //   FROM platforms p
+    //   left join manufacturers m on p.manufacturer_uuid = m.uuid
+    //   WHERE p.orgid = $1 ORDER BY p.name`, [req.orgid])).rows;
+    const rows = (await db.query(`SELECT * FROM platforms WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getPlatform(req, res, next) {
   try {
-    const rows = (await db.query(`SELECT p.uuid, p.name, p.slug, p.description, p.tags, 
-      p.orgid,p.createdat, p.updatedat, p.user_id, 
-      jsonb_build_object('uuid', m.uuid, 'name', m.name) as manufacturer
-      FROM platforms p
-      left join manufacturers m on p.manufacturer_uuid = m.uuid
-      WHERE p.orgid = $1 and p.uuid = $2 ORDER BY p.name`, [req.orgid, req.params.id])).rows;
+    // const rows = (await db.query(`SELECT p.uuid, p.name, p.slug, p.description, p.tags, 
+    //   p.orgid,p.createdat, p.updatedat, p.user_id, 
+    //   jsonb_build_object('uuid', m.uuid, 'name', m.name) as manufacturer
+    //   FROM platforms p
+    //   left join manufacturers m on p.manufacturer_uuid = m.uuid
+    //   WHERE p.orgid = $1 and p.uuid = $2 ORDER BY p.name`, [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT * FROM platforms WHERE orgid = $1 and uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
