@@ -19,7 +19,7 @@ async function createCircuits(req, res, next) {
 
 async function listCircuits(req, res, next) {
   try {
-    const rows = (await db.query(`SELECT c.commitrate, c.customerip, c.description, c.gatewayip, c.installed, c.ordernumber,
+    const rows = (await db.query(`SELECT c.uuid, c.commitrate, c.customerip, c.description, c.gatewayip, c.installed, c.ordernumber,
       jsonb_build_object('uuid', p.uuid, 'name', p.name) as provider_uuid, c.provideraccount, c.tags, c.tenant, c.terminates, c.type, c.status, c.comments, c.orgid, c.user_id, 
       c.createdat, c.updatedat
       FROM circuits c
@@ -31,7 +31,7 @@ async function listCircuits(req, res, next) {
 
 async function getCircuit(req, res, next) {
   try {
-    const rows = (await db.query(`SELECT c.commitrate, c.customerip, c.description, c.gatewayip, c.installed, c.ordernumber,
+    const rows = (await db.query(`SELECT c.uuid, c.commitrate, c.customerip, c.description, c.gatewayip, c.installed, c.ordernumber,
       jsonb_build_object('uuid', p.uuid, 'name', p.name) as provider_uuid, c.provideraccount, c.tags, c.tenant, c.terminates, c.type, c.status, c.comments, c.orgid, c.user_id, 
       c.createdat, c.updatedat
       FROM circuits c
