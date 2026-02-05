@@ -6,9 +6,9 @@ async function createDevices(req, res, next) {
     const sql = `INSERT INTO devices (name, site_uuid, devicetype, role, description, assettag, tag, 
     tenant, tenantgroup, manufacturer_uuid, interfaces, ips, airflow, cluster, face, 
     platform_uuid, rack_uuid, serialno, services, location_uuid, position, 
-    virtualchassis, docid, orgid, comments, user_id, updatedat) 
+    virtualchassis, orgid, comments, user_id, updatedat) 
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,
-    $22,$23,$24,$25,$26,current_timestamp) RETURNING *`;
+    $22,$23,$24,$25,current_timestamp) RETURNING *`;
     const values = [payload.name, payload.site_uuid, payload.devicetype || null,
       payload.role || null, payload?.description || null, 
       payload?.assettag || null, payload?.tag || null, payload?.tenant || null,
@@ -17,7 +17,7 @@ async function createDevices(req, res, next) {
       payload?.face || null, payload?.platform_uuid || null,
       payload?.rack_uuid || null, payload?.serialno || null, payload?.services || null,
       payload?.location_uuid || null, payload?.position || null, payload?.virtualchassis || null, 
-      payload?.docid || null, req.orgid, payload?.comments || null, 
+      req.orgid, payload?.comments || null, 
       req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     res.status(201).json(result.rows[0]);

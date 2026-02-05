@@ -22,7 +22,7 @@ async function listWireless(req, res, next) {
     const rows = (await db.query(`SELECT w.uuid, w.ssid, w.description, w.tag, w.tenant, w.tenantgroup,
       w."group", w.presharekey, w.authtype, w.authcipher, w.interfaces, w.orgid,
       w.comments, w.status, w.updatedat, w.user_id,
-      jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan
+      jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan_uuid
       FROM wireless w
       left join vlans v on w.vlan_uuid = v.uuid
       WHERE w.orgid = $1 ORDER BY w.ssid`, [req.orgid])).rows;
@@ -35,7 +35,7 @@ async function getWireless(req, res, next) {
     const rows = (await db.query(`SELECT w.uuid, w.ssid, w.description, w.tag, w.tenant, w.tenantgroup,
       w."group", w.presharekey, w.authtype, w.authcipher, w.interfaces, w.orgid,
       w.comments, w.status, w.updatedat, w.user_id,
-      jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan
+      jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan_uuid
       FROM wireless w
       left join vlans v on w.vlan_uuid = v.uuid
       WHERE w.orgid = $1 and w.uuid = $2 ORDER BY w.ssid`, [req.orgid, req.params.id])).rows;

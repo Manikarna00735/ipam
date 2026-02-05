@@ -33,8 +33,8 @@ async function listSites(req, res, next) {
   try {
     const rows = (await db.query(`SELECT s.uuid, s.name, s.slug, s.description, s.tagscsv, s.tenant, s.tenantgroup, 
       s.physicaladdress, s.shippingaddress, s.comments, s.status, s.createdat, s.updatedat, s.orgid, s.user_id,
-      jsonb_build_object('uuid', l.uuid, 'name', l.name) as location,
-      jsonb_build_object('uuid', r.uuid, 'name', r.name) as region
+      jsonb_build_object('uuid', l.uuid, 'name', l.name) as location_uuid,
+      jsonb_build_object('uuid', r.uuid, 'name', r.name) as region_uuid
       FROM sites s
       left join locations l on s.location_uuid = l.uuid
       left join regions r on s.region_uuid = r.uuid
@@ -47,8 +47,8 @@ async function getSite(req, res, next) {
   try {
     const rows = (await db.query(`SELECT s.uuid, s.name, s.slug, s.description, s.tagscsv, s.tenant, s.tenantgroup, 
       s.physicaladdress, s.shippingaddress, s.comments, s.status, s.createdat, s.updatedat, s.orgid, s.user_id,
-      jsonb_build_object('uuid', l.uuid, 'name', l.name) as location,
-      jsonb_build_object('uuid', r.uuid, 'name', r.name) as region
+      jsonb_build_object('uuid', l.uuid, 'name', l.name) as location_uuid,
+      jsonb_build_object('uuid', r.uuid, 'name', r.name) as region_uuid
       FROM sites s
       left join locations l on s.location_uuid = l.uuid
       left join regions r on s.region_uuid = r.uuid

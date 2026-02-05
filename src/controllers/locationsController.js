@@ -19,7 +19,7 @@ async function listLocations(req, res, next) {
   try {
     const rows = (await db.query(`SELECT l.uuid, l.name, l.slug, l.description, l.rackscount, 
       l.devicescount, l.tagscsv, l.tenant, l.tenantgroup, l.orgid, l.status, l.createdat, l.updatedat, l.user_id,
-      jsonb_build_object('uuid', s.uuid, 'name', s.name) as site
+      jsonb_build_object('uuid', s.uuid, 'name', s.name) as site_uuid
       FROM locations l 
       left join sites s on l.site_uuid = s.uuid
       WHERE l.orgid = $1 ORDER BY l.name`, [req.orgid])).rows;
@@ -31,7 +31,7 @@ async function getLocation(req, res, next) {
   try {
     const rows = (await db.query(`SELECT l.uuid, l.name, l.slug, l.description, l.rackscount, 
       l.devicescount, l.tagscsv, l.tenant, l.tenantgroup, l.orgid, l.status, l.createdat, l.updatedat, l.user_id,
-      jsonb_build_object('uuid', s.uuid, 'name', s.name) as site
+      jsonb_build_object('uuid', s.uuid, 'name', s.name) as site_uuid
       FROM locations l 
       left join sites s on l.site_uuid = s.uuid
       WHERE l.orgid = $1 and l.uuid = $2 ORDER BY l.name`, [req.orgid, req.params.id])).rows;
