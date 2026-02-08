@@ -11,39 +11,6 @@ Minimal IPAM backend scaffold using Express, raw `pg`, JWT auth, and `socket.io`
 npm install
 ```
 
-3. Create the Postgres database and run migrations:
-
-```bash
-# Example: create database with psql
-psql -c "CREATE DATABASE ipamdb;"
-# Run SQL migrations (reads DATABASE_URL)
-node scripts/runMigrations.js
-```
-
-4. Start the server (dev):
-
-```bash
-npm run dev
-```
-
-The server listens on `PORT` (default `3000`).
-
-**Testing**
-
-Set `DATABASE_URL` in `.env` to point to a test database (tests will remove created rows). Then:
-
-```bash
-npm test
-```
-
-**API (high level)**
-
-- Auth:
-  - `POST /api/auth/register` — body: `{ email, password }`
-  - `POST /api/auth/login` — body: `{ email, password }` → returns `{ token }`
-  - Protected endpoints require header `Authorization: Bearer <token>` and `X-Org-Id` for org scoping.
-
-- Generic resources (examples): mounted under `/api/ipam/{resource}` — support `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id`.
 
 - IPAM nested routes (prefixes/subnets/ips):
   - `POST /api/ipam/prefixes`
@@ -65,12 +32,6 @@ See the source for exact request/response shapes in the controllers under `src/c
 **Realtime (WebSocket)**
 
 The app exposes a Socket.IO server. Clients can connect to receive events like `prefixes:created`, `subnets:updated`, `ips:deleted`, etc. Events are emitted globally; payloads include created/updated rows or `{ id, org_id }` on deletes.
-
-**Notes & Next steps**
-
-- Run `node scripts/runMigrations.js` to apply the SQL in `migrations/` (requires `psql` and `DATABASE_URL`).
-- The project includes basic input validation and integration tests in `tests/` as examples — expand tests for other modules as needed.
-- Review `migrations/002_resources.sql` to tune schema, constraints, and indexes for production workloads.
 
 If you want, I can (A) add more API docs per-resource, (B) add OpenAPI spec, or (C) refine migrations for production. Tell me which.
 # IPAM Backend (Express + Postgres)
@@ -103,8 +64,3 @@ npm install
 npm test
 ```
 
-API
-
-- `POST /api/auth/register` - register user (email, password)
-- `POST /api/auth/login` - login (email, password) -> returns `token`
-- `GET /api/me` - protected, requires `Authorization: Bearer <token>`
