@@ -1,0 +1,35 @@
+name: Build and Push Docker Image to Azure ACR (RBAC)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build Docker image (latest + sha)
+        run: |
+          ACR_SERVER="${{ secrets.ACR_NAME }}.azurecr.io"
+          docker build \
+            -t $ACR_SERVER/ipam-backend:${{ github.sha }} \
+            -t $ACR_SERVER/ipam-backend:latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          ACR_SERVER="${{ secrets.ACR_NAME }}.azurecr.io"
+          docker push $ACR_SERVER/ipam-backend:${{ github.sha }}
+          docker push $ACR_SERVER/ipam-backend:latest
