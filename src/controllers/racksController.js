@@ -41,32 +41,40 @@ async function createRacks(req, res, next) {
 
 async function listRacks(req, res, next) {
   try {
-    // const rows = (await db.query(`SELECT r.uuid, r.name, r.slug, r.description, r.assettag,
-    // r.tagscsv,r.tenant,r.facilityid,r.role, r.heightu, r.widthin, r.depth, r.powerutilization, r.spaceutilization,
-    // r.serialnumber, r.comments, r.status, r.createdat, r.updatedat, r.orgid, r.user_id,
-    // jsonb_build_object('uuid', s.uuid, 'name', s.name) as site,
-    // jsonb_build_object('uuid', l.uuid, 'name', l.name) as location
-    // FROM racks r
-    // left join sites s on r.site_uuid = s.uuid
-    // left join locations l on r.location_uuid = l.uuid 
-    // WHERE r.orgid = $1 ORDER BY r.name`, [req.orgid])).rows;
-    const rows = (await db.query(`SELECT * FROM racks WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
+    const rows = (await db.query(`SELECT r.uuid, r.name, r.slug, r.description, r.assettag,
+    r.tagscsv,r.tenant,r.facilityid,r.role, r.heightu, r.widthin, r.depth, r.powerutilization, r.spaceutilization,
+    r.serialnumber, r.comments, r.status, r.createdat, r.updatedat, r.orgid, r.user_id,
+    jsonb_build_object('uuid', s.uuid, 'name', s.name) as site_uuid,
+    jsonb_build_object('uuid', l.uuid, 'name', l.name) as location_uuid,
+    array_agg(jsonb_build_object('name', d.name, 'uuid', d.uuid, 'face', d.face, 'position', d.position)) as devices
+    FROM racks r
+    left join sites s on r.site_uuid = s.uuid
+    left join locations l on r.location_uuid = l.uuid 
+    left join devices d on r.uuid = d.rack_uuid
+    WHERE r.orgid = $1 
+    group by r.uuid, s.uuid, l.uuid
+    ORDER BY r.name`, [req.orgid])).rows;
+    // const rows = (await db.query(`SELECT * FROM racks WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getRack(req, res, next) {
   try {
-    // const rows = (await db.query(`SELECT r.uuid, r.name, r.slug, r.description, r.assettag,
-    // r.tagscsv,r.tenant,r.facilityid,r.role, r.heightu, r.widthin, r.depth, r.powerutilization, r.spaceutilization,
-    // r.serialnumber, r.comments, r.status, r.createdat, r.updatedat, r.orgid, r.user_id,
-    // jsonb_build_object('uuid', s.uuid, 'name', s.name) as site,
-    // jsonb_build_object('uuid', l.uuid, 'name', l.name) as location
-    // FROM racks r
-    // left join sites s on r.site_uuid = s.uuid
-    // left join locations l on r.location_uuid = l.uuid 
-    // WHERE r.orgid = $1 and r.uuid = $2 ORDER BY r.name`, [req.orgid, req.params.id])).rows;
-    const rows = (await db.query(`SELECT * FROM racks WHERE orgid = $1 and uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT r.uuid, r.name, r.slug, r.description, r.assettag,
+    r.tagscsv,r.tenant,r.facilityid,r.role, r.heightu, r.widthin, r.depth, r.powerutilization, r.spaceutilization,
+    r.serialnumber, r.comments, r.status, r.createdat, r.updatedat, r.orgid, r.user_id,
+    jsonb_build_object('uuid', s.uuid, 'name', s.name) as site_uuid,
+    jsonb_build_object('uuid', l.uuid, 'name', l.name) as location_uuid,
+    array_agg(jsonb_build_object('name', d.name, 'uuid', d.uuid, 'face', d.face, 'position', d.position)) as devices
+    FROM racks r
+    left join sites s on r.site_uuid = s.uuid
+    left join locations l on r.location_uuid = l.uuid 
+    left join devices d on r.uuid = d.rack_uuid
+    WHERE r.orgid = $1 and r.uuid = $2
+    group by r.uuid, s.uuid, l.uuid
+    ORDER BY r.name`, [req.orgid, req.params.id])).rows;
+    // const rows = (await db.query(`SELECT * FROM racks WHERE orgid = $1 and uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }

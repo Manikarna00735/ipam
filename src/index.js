@@ -18,6 +18,7 @@ const vrfs = require('./routes/vrfs');
 const vlans = require('./routes/vlans');
 const interfaces = require('./routes/interfaces');
 const realtime = require('./realtime');
+const commonModule = require('./routes/commonmoudule');
 
 const app = express();
 app.use(cors());
@@ -44,6 +45,7 @@ app.use('/api/ipam', ipamRoutes);
   app.use('/api/ipam/vrfs', vrfs);
   app.use('/api/ipam/vlans', vlans);
   app.use('/api/ipam/interfaces', interfaces);
+  app.use('/api/ipam/common', commonModule);
 
 app.use((err, req, res, next) => {
   console.error(err);
