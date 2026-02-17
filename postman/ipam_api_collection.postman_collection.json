@@ -1,163 +1,1335 @@
 {
   "info": {
-    "name": "IPAM API - Minimal CRUD",
+    "name": "IPAM API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0",
-    "description": "CRUD collection for IPAM modules (excluding user and ipam sections)"
+    "version": "2.0.0",
+    "description": "Full CRUD collection for IPAM + Assets modules. All requests require Authorization and X-Org-Id headers."
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:5000" },
-    { "key": "authToken", "value": "" }
+    { "key": "authToken", "value": "" },
+    { "key": "orgId", "value": "" }
   ],
   "item": [
     {
       "name": "Providers",
       "item": [
-        { "name": "List Providers", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/providers","host":["{{baseUrl}}"],"path":["api","ipam","providers"]} } },
-        { "name": "Create Provider", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Provider A\",\n  \"slug\": \"provider-a\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/providers","host":["{{baseUrl}}"],"path":["api","ipam","providers"]} } },
-        { "name": "Get Provider", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/providers/:id","host":["{{baseUrl}}"],"path":["api","ipam","providers",":id"]} } },
-        { "name": "Update Provider", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Provider A Updated\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/providers/:id","host":["{{baseUrl}}"],"path":["api","ipam","providers",":id"]} } },
-        { "name": "Delete Provider", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/providers/:id","host":["{{baseUrl}}"],"path":["api","ipam","providers",":id"]} } }
+        {
+          "name": "List Providers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/providers", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "providers"] }
+          }
+        },
+        {
+          "name": "Create Provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Provider A\",\n  \"slug\": \"provider-a\",\n  \"description\": \"Primary ISP\",\n  \"asnscsv\": \"65001,65002\",\n  \"comments\": \"Preferred provider\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/providers", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "providers"] }
+          }
+        },
+        {
+          "name": "Get Provider",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/providers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "providers", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Provider UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Provider",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Provider A Updated\",\n  \"description\": \"Updated ISP\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/providers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "providers", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Provider UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Provider",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/providers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "providers", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Provider UUID" }]
+            }
+          }
+        }
       ]
     },
     {
       "name": "Regions",
       "item": [
-        { "name": "List Regions", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/regions","host":["{{baseUrl}}"],"path":["api","ipam","regions"]} } },
-        { "name": "Create Region", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Region A\",\n  \"slug\": \"region-a\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/regions","host":["{{baseUrl}}"],"path":["api","ipam","regions"]} } },
-        { "name": "Get Region", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/regions/:id","host":["{{baseUrl}}"],"path":["api","ipam","regions",":id"]} } },
-        { "name": "Update Region", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Region A Updated\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/regions/:id","host":["{{baseUrl}}"],"path":["api","ipam","regions",":id"]} } },
-        { "name": "Delete Region", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/regions/:id","host":["{{baseUrl}}"],"path":["api","ipam","regions",":id"]} } }
+        {
+          "name": "List Regions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/regions", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "regions"] }
+          }
+        },
+        {
+          "name": "Create Region",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Region A\",\n  \"slug\": \"region-a\",\n  \"description\": \"Asia Pacific\",\n  \"tagscsv\": \"apac,primary\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/regions", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "regions"] }
+          }
+        },
+        {
+          "name": "Get Region",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/regions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "regions", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Region UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Region",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Region A Updated\",\n  \"description\": \"Updated description\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/regions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "regions", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Region UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Region",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/regions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "regions", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Region UUID" }]
+            }
+          }
+        }
       ]
     },
     {
       "name": "Sites",
       "item": [
-        { "name": "List Sites", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/sites","host":["{{baseUrl}}"],"path":["api","ipam","sites"]} } },
-        { "name": "Create Site", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Site A\",\n  \"slug\": \"site-a\",\n  \"status\": \"active\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/sites","host":["{{baseUrl}}"],"path":["api","ipam","sites"]} } },
-        { "name": "Get Site", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/sites/:id","host":["{{baseUrl}}"],"path":["api","ipam","sites",":id"]} } },
-        { "name": "Update Site", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": \"maintenance\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/sites/:id","host":["{{baseUrl}}"],"path":["api","ipam","sites",":id"]} } },
-        { "name": "Delete Site", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/sites/:id","host":["{{baseUrl}}"],"path":["api","ipam","sites",":id"]} } }
-      ]
-    },
-    {
-      "name": "Manufacturers",
-      "item": [
-        { "name": "List Manufacturers", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/manufacturers","host":["{{baseUrl}}"],"path":["api","ipam","manufacturers"]} } },
-        { "name": "Create Manufacturer", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Mfg A\",\n  \"slug\": \"mfg-a\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/manufacturers","host":["{{baseUrl}}"],"path":["api","ipam","manufacturers"]} } },
-        { "name": "Get Manufacturer", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/manufacturers/:id","host":["{{baseUrl}}"],"path":["api","ipam","manufacturers",":id"]} } },
-        { "name": "Update Manufacturer", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Mfg A Updated\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/manufacturers/:id","host":["{{baseUrl}}"],"path":["api","ipam","manufacturers",":id"]} } },
-        { "name": "Delete Manufacturer", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/manufacturers/:id","host":["{{baseUrl}}"],"path":["api","ipam","manufacturers",":id"]} } }
-      ]
-    },
-    {
-      "name": "Platforms",
-      "item": [
-        { "name": "List Platforms", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/platforms","host":["{{baseUrl}}"],"path":["api","ipam","platforms"]} } },
-        { "name": "Create Platform", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Platform X\",\n  \"slug\": \"plat-x\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/platforms","host":["{{baseUrl}}"],"path":["api","ipam","platforms"]} } },
-        { "name": "Get Platform", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/platforms/:id","host":["{{baseUrl}}"],"path":["api","ipam","platforms",":id"]} } },
-        { "name": "Update Platform", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Platform X Updated\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/platforms/:id","host":["{{baseUrl}}"],"path":["api","ipam","platforms",":id"]} } },
-        { "name": "Delete Platform", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/platforms/:id","host":["{{baseUrl}}"],"path":["api","ipam","platforms",":id"]} } }
-      ]
-    },
-    {
-      "name": "VLANs",
-      "item": [
-        { "name": "List VLANs", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/vlans","host":["{{baseUrl}}"],"path":["api","ipam","vlans"]} } },
-        { "name": "Create VLAN", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"VLAN 100\",\n  \"vid\": \"100\",\n  \"status\": \"active\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/vlans","host":["{{baseUrl}}"],"path":["api","ipam","vlans"]} } },
-        { "name": "Get VLAN", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/vlans/:id","host":["{{baseUrl}}"],"path":["api","ipam","vlans",":id"]} } },
-        { "name": "Update VLAN", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": \"inactive\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/vlans/:id","host":["{{baseUrl}}"],"path":["api","ipam","vlans",":id"]} } },
-        { "name": "Delete VLAN", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/vlans/:id","host":["{{baseUrl}}"],"path":["api","ipam","vlans",":id"]} } }
-      ]
-    },
-    {
-      "name": "VRFs",
-      "item": [
-        { "name": "List VRFs", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/vrfs","host":["{{baseUrl}}"],"path":["api","ipam","vrfs"]} } },
-        { "name": "Create VRF", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"VRF-A\",\n  \"vfsid\": \"100\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/vrfs","host":["{{baseUrl}}"],"path":["api","ipam","vrfs"]} } },
-        { "name": "Get VRF", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/vrfs/:id","host":["{{baseUrl}}"],"path":["api","ipam","vrfs",":id"]} } },
-        { "name": "Update VRF", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"description\": \"Updated VRF\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/vrfs/:id","host":["{{baseUrl}}"],"path":["api","ipam","vrfs",":id"]} } },
-        { "name": "Delete VRF", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/vrfs/:id","host":["{{baseUrl}}"],"path":["api","ipam","vrfs",":id"]} } }
-      ]
-    },
-    {
-      "name": "Racks",
-      "item": [
-        { "name": "List Racks", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/racks","host":["{{baseUrl}}"],"path":["api","ipam","racks"]} } },
-        { "name": "Create Rack", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Rack 1\",\n  \"slug\": \"rack-1\",\n  \"site\": \"site-a\",\n  \"status\": \"active\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/racks","host":["{{baseUrl}}"],"path":["api","ipam","racks"]} } },
-        { "name": "Get Rack", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/racks/:id","host":["{{baseUrl}}"],"path":["api","ipam","racks",":id"]} } },
-        { "name": "Update Rack", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": \"maintenance\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/racks/:id","host":["{{baseUrl}}"],"path":["api","ipam","racks",":id"]} } },
-        { "name": "Delete Rack", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/racks/:id","host":["{{baseUrl}}"],"path":["api","ipam","racks",":id"]} } }
-      ]
-    },
-    {
-      "name": "Devices",
-      "item": [
-        { "name": "List Devices", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/devices","host":["{{baseUrl}}"],"path":["api","ipam","devices"]} } },
-        { "name": "Create Device", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Device 1\",\n  \"site\": \"site-a\",\n  \"devicetype\": \"switch\",\n  \"devicerole\": \"edge\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/devices","host":["{{baseUrl}}"],"path":["api","ipam","devices"]} } },
-        { "name": "Get Device", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/devices/:id","host":["{{baseUrl}}"],"path":["api","ipam","devices",":id"]} } },
-        { "name": "Update Device", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"devicerole\": \"core\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/devices/:id","host":["{{baseUrl}}"],"path":["api","ipam","devices",":id"]} } },
-        { "name": "Delete Device", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/devices/:id","host":["{{baseUrl}}"],"path":["api","ipam","devices",":id"]} } }
-      ]
-    },
-    {
-      "name": "Wireless",
-      "item": [
-        { "name": "List Wireless", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/wireless","host":["{{baseUrl}}"],"path":["api","ipam","wireless"]} } },
-        { "name": "Create Wireless", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"ssid\": \"MyWiFi\",\n  \"status\": \"active\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/wireless","host":["{{baseUrl}}"],"path":["api","ipam","wireless"]} } },
-        { "name": "Get Wireless", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/wireless/:id","host":["{{baseUrl}}"],"path":["api","ipam","wireless",":id"]} } },
-        { "name": "Update Wireless", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": \"inactive\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/wireless/:id","host":["{{baseUrl}}"],"path":["api","ipam","wireless",":id"]} } },
-        { "name": "Delete Wireless", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/wireless/:id","host":["{{baseUrl}}"],"path":["api","ipam","wireless",":id"]} } }
-      ]
-    },
-    {
-      "name": "Interfaces",
-      "item": [
-        { "name": "List Interfaces", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/interfaces","host":["{{baseUrl}}"],"path":["api","ipam","interfaces"]} } },
-        { "name": "Create Interface", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"eth0\",\n  \"device\": \"device-uuid\",\n  \"type\": \"ethernet\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/interfaces","host":["{{baseUrl}}"],"path":["api","ipam","interfaces"]} } },
-        { "name": "Get Interface", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/interfaces/:id","host":["{{baseUrl}}"],"path":["api","ipam","interfaces",":id"]} } },
-        { "name": "Update Interface", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"description\": \"Updated interface\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/interfaces/:id","host":["{{baseUrl}}"],"path":["api","ipam","interfaces",":id"]} } },
-        { "name": "Delete Interface", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/interfaces/:id","host":["{{baseUrl}}"],"path":["api","ipam","interfaces",":id"]} } }
-      ]
-    },
-    {
-      "name": "Circuits",
-      "item": [
-        { "name": "List Circuits", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/circuits","host":["{{baseUrl}}"],"path":["api","ipam","circuits"]} } },
-        { "name": "Create Circuit", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"circuitid\": \"C-100\",\n  \"provider\": \"provider-a\",\n  \"sidea\": \"location-a\",\n  \"type\": \"layer2\",\n  \"status\": \"active\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/circuits","host":["{{baseUrl}}"],"path":["api","ipam","circuits"]} } },
-        { "name": "Get Circuit", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/circuits/:id","host":["{{baseUrl}}"],"path":["api","ipam","circuits",":id"]} } },
-        { "name": "Update Circuit", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": \"terminated\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/circuits/:id","host":["{{baseUrl}}"],"path":["api","ipam","circuits",":id"]} } },
-        { "name": "Delete Circuit", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/circuits/:id","host":["{{baseUrl}}"],"path":["api","ipam","circuits",":id"]} } }
+        {
+          "name": "List Sites",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/sites", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "sites"] }
+          }
+        },
+        {
+          "name": "Create Site",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Site A\",\n  \"slug\": \"site-a\",\n  \"status\": \"active\",\n  \"region_uuid\": \"<region-uuid>\",\n  \"physicaladdress\": \"123 Main St, New York\",\n  \"tenant\": \"default\",\n  \"comments\": \"Primary datacenter\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/sites", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "sites"] }
+          }
+        },
+        {
+          "name": "Get Site",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/sites/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "sites", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Site UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Site",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"maintenance\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/sites/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "sites", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Site UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Site",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/sites/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "sites", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Site UUID" }]
+            }
+          }
+        }
       ]
     },
     {
       "name": "Locations",
       "item": [
-        { "name": "List Locations", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/locations","host":["{{baseUrl}}"],"path":["api","ipam","locations"]} } },
-        { "name": "Create Location", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Loc A\",\n  \"slug\": \"loc-a\",\n  \"site\": \"site-a\",\n  \"status\": \"active\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/locations","host":["{{baseUrl}}"],"path":["api","ipam","locations"]} } },
-        { "name": "Get Location", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/locations/:id","host":["{{baseUrl}}"],"path":["api","ipam","locations",":id"]} } },
-        { "name": "Update Location", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": \"inactive\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/locations/:id","host":["{{baseUrl}}"],"path":["api","ipam","locations",":id"]} } },
-        { "name": "Delete Location", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/locations/:id","host":["{{baseUrl}}"],"path":["api","ipam","locations",":id"]} } }
+        {
+          "name": "List Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/locations", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "locations"] }
+          }
+        },
+        {
+          "name": "Create Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Floor 1\",\n  \"slug\": \"floor-1\",\n  \"status\": \"active\",\n  \"site_uuid\": \"<site-uuid>\",\n  \"description\": \"First floor server room\",\n  \"tenant\": \"default\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/locations", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "locations"] }
+          }
+        },
+        {
+          "name": "Get Location",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/locations/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "locations", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Location UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"inactive\",\n  \"description\": \"Decommissioned\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/locations/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "locations", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Location UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Location",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/locations/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "locations", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Location UUID" }]
+            }
+          }
+        }
       ]
     },
     {
-      "name": "Interface Modules",
+      "name": "Manufacturers",
       "item": [
-        { "name": "List Interface Modules", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/interfaceModules","host":["{{baseUrl}}"],"path":["api","ipam","interfaceModules"]} } },
-        { "name": "Create Interface Module", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Module A\",\n  \"slug\": \"mod-a\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/interfaceModules","host":["{{baseUrl}}"],"path":["api","ipam","interfaceModules"]} } },
-        { "name": "Get Interface Module", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/interfaceModules/:id","host":["{{baseUrl}}"],"path":["api","ipam","interfaceModules",":id"]} } },
-        { "name": "Update Interface Module", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Module A Updated\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/interfaceModules/:id","host":["{{baseUrl}}"],"path":["api","ipam","interfaceModules",":id"]} } },
-        { "name": "Delete Interface Module", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/interfaceModules/:id","host":["{{baseUrl}}"],"path":["api","ipam","interfaceModules",":id"]} } }
+        {
+          "name": "List Manufacturers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/manufacturers", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "manufacturers"] }
+          }
+        },
+        {
+          "name": "Create Manufacturer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cisco\",\n  \"slug\": \"cisco\",\n  \"description\": \"Networking hardware\",\n  \"tags\": \"networking,enterprise\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/manufacturers", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "manufacturers"] }
+          }
+        },
+        {
+          "name": "Get Manufacturer",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/manufacturers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "manufacturers", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Manufacturer UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Manufacturer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated description\",\n  \"tags\": \"networking,updated\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/manufacturers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "manufacturers", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Manufacturer UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Manufacturer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/manufacturers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "manufacturers", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Manufacturer UUID" }]
+            }
+          }
+        }
       ]
     },
     {
-      "name": "Resources",
+      "name": "Platforms",
       "item": [
-        { "name": "List Resources", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/resources","host":["{{baseUrl}}"],"path":["api","ipam","resources"]} } },
-        { "name": "Create Resource", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Resource 1\",\n  \"slug\": \"res-1\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/resources","host":["{{baseUrl}}"],"path":["api","ipam","resources"]} } },
-        { "name": "Get Resource", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/resources/:id","host":["{{baseUrl}}"],"path":["api","ipam","resources",":id"]} } },
-        { "name": "Update Resource", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Resource 1 Updated\"\n}"}, "url": {"raw":"{{baseUrl}}/api/ipam/resources/:id","host":["{{baseUrl}}"],"path":["api","ipam","resources",":id"]} } },
-        { "name": "Delete Resource", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{authToken}}"}], "url": {"raw":"{{baseUrl}}/api/ipam/resources/:id","host":["{{baseUrl}}"],"path":["api","ipam","resources",":id"]} } }
+        {
+          "name": "List Platforms",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/platforms", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "platforms"] }
+          }
+        },
+        {
+          "name": "Create Platform",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IOS-XE\",\n  \"slug\": \"ios-xe\",\n  \"description\": \"Cisco IOS XE\",\n  \"manufacturer_uuid\": \"<manufacturer-uuid>\",\n  \"tags\": \"cisco,ios\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/platforms", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "platforms"] }
+          }
+        },
+        {
+          "name": "Get Platform",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/platforms/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "platforms", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Platform UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Platform",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated platform\",\n  \"tags\": \"cisco,updated\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/platforms/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "platforms", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Platform UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Platform",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/platforms/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "platforms", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Platform UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Racks",
+      "item": [
+        {
+          "name": "List Racks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/racks", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "racks"] }
+          }
+        },
+        {
+          "name": "Create Rack",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rack-01\",\n  \"slug\": \"rack-01\",\n  \"status\": \"active\",\n  \"site_uuid\": \"<site-uuid>\",\n  \"location_uuid\": \"<location-uuid>\",\n  \"heightu\": 42,\n  \"widthin\": 19,\n  \"role\": \"server\",\n  \"serialnumber\": \"SN-001\",\n  \"comments\": \"Primary rack\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/racks", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "racks"] }
+          }
+        },
+        {
+          "name": "Get Rack",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/racks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "racks", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Rack UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Rack",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"maintenance\",\n  \"comments\": \"Under maintenance\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/racks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "racks", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Rack UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Rack",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/racks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "racks", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Rack UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "List Devices",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/devices", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "devices"] }
+          }
+        },
+        {
+          "name": "Create Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"core-sw-01\",\n  \"devicetype\": \"switch\",\n  \"role\": \"core\",\n  \"site_uuid\": \"<site-uuid>\",\n  \"manufacturer_uuid\": \"<manufacturer-uuid>\",\n  \"platform_uuid\": \"<platform-uuid>\",\n  \"rack_uuid\": \"<rack-uuid>\",\n  \"location_uuid\": \"<location-uuid>\",\n  \"serialno\": \"FOC12345\",\n  \"tenant\": \"default\",\n  \"comments\": \"Core switch\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/devices", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "devices"] }
+          }
+        },
+        {
+          "name": "Get Device",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/devices/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "devices", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Device UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Device",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"edge\",\n  \"comments\": \"Moved to edge role\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/devices/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "devices", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Device UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/devices/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "devices", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Device UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Interfaces",
+      "item": [
+        {
+          "name": "List Interfaces",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/interfaces", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "interfaces"] }
+          }
+        },
+        {
+          "name": "Create Interface",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"GigabitEthernet0/0\",\n  \"device_uuid\": \"<device-uuid>\",\n  \"type\": \"1000base-t\",\n  \"description\": \"Uplink port\",\n  \"speed\": \"1000\",\n  \"mac\": \"AA:BB:CC:DD:EE:FF\",\n  \"mtu\": \"1500\",\n  \"vrf_uuid\": \"<vrf-uuid>\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/interfaces", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "interfaces"] }
+          }
+        },
+        {
+          "name": "Get Interface",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/interfaces/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "interfaces", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Interface UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Interface",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated uplink port\",\n  \"speed\": \"10000\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/interfaces/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "interfaces", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Interface UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Interface",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/interfaces/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "interfaces", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Interface UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Circuits",
+      "item": [
+        {
+          "name": "List Circuits",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/circuits", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "circuits"] }
+          }
+        },
+        {
+          "name": "Create Circuit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider_uuid\": \"<provider-uuid>\",\n  \"type\": \"layer2\",\n  \"status\": \"active\",\n  \"ordernumber\": \"ORD-001\",\n  \"commitrate\": \"1000\",\n  \"description\": \"Primary WAN circuit\",\n  \"tenant\": \"default\",\n  \"installed\": \"2024-01-01\",\n  \"terminates\": \"2026-12-31\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/circuits", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "circuits"] }
+          }
+        },
+        {
+          "name": "Get Circuit",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/circuits/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "circuits", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Circuit UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Circuit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"deprovisioning\",\n  \"comments\": \"Being decommissioned\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/circuits/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "circuits", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Circuit UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Circuit",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/circuits/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "circuits", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Circuit UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "VLANs",
+      "item": [
+        {
+          "name": "List VLANs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/vlans", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "vlans"] }
+          }
+        },
+        {
+          "name": "Create VLAN",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"VLAN-100\",\n  \"status\": \"active\",\n  \"role\": \"production\",\n  \"description\": \"Production VLAN\",\n  \"tenant\": \"default\",\n  \"tag\": \"100\",\n  \"comments\": \"Primary prod VLAN\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/vlans", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "vlans"] }
+          }
+        },
+        {
+          "name": "Get VLAN",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/vlans/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "vlans", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "VLAN UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update VLAN",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"inactive\",\n  \"description\": \"Deprecated VLAN\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/vlans/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "vlans", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "VLAN UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete VLAN",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/vlans/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "vlans", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "VLAN UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "VRFs",
+      "item": [
+        {
+          "name": "List VRFs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/vrfs", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "vrfs"] }
+          }
+        },
+        {
+          "name": "Create VRF",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"VRF-PROD\",\n  \"description\": \"Production VRF\",\n  \"tenant\": \"default\",\n  \"importtarget\": \"65001:100\",\n  \"exporttarget\": \"65001:100\",\n  \"comments\": \"Production routing instance\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/vrfs", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "vrfs"] }
+          }
+        },
+        {
+          "name": "Get VRF",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/vrfs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "vrfs", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "VRF UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update VRF",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated VRF\",\n  \"importtarget\": \"65001:200\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/vrfs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "vrfs", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "VRF UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete VRF",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/vrfs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "vrfs", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "VRF UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wireless",
+      "item": [
+        {
+          "name": "List Wireless",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/ipam/wireless", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "wireless"] }
+          }
+        },
+        {
+          "name": "Create Wireless",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ssid\": \"CorpWiFi\",\n  \"status\": \"active\",\n  \"authtype\": \"wpa2-enterprise\",\n  \"authcipher\": \"aes\",\n  \"vlan_uuid\": \"<vlan-uuid>\",\n  \"description\": \"Corporate wireless\",\n  \"tenant\": \"default\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ipam/wireless", "host": ["{{baseUrl}}"], "path": ["api", "ipam", "wireless"] }
+          }
+        },
+        {
+          "name": "Get Wireless",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/wireless/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "wireless", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Wireless UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Wireless",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"inactive\",\n  \"description\": \"Disabled temporarily\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/wireless/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "wireless", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Wireless UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Wireless",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/wireless/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "wireless", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Wireless UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vendors",
+      "item": [
+        {
+          "name": "List Vendors",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/assets/vendors", "host": ["{{baseUrl}}"], "path": ["api", "assets", "vendors"] }
+          }
+        },
+        {
+          "name": "Create Vendor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cisco Systems\",\n  \"vendor_type\": \"Hardware\",\n  \"category\": \"Networking\",\n  \"internal_owner\": \"John Smith\",\n  \"email\": \"contact@cisco.com\",\n  \"status\": \"Active\",\n  \"vendor_criticality\": \"High\",\n  \"primary_contact_name\": \"Jane Doe\",\n  \"phone\": \"+1-800-553-6387\",\n  \"website\": \"https://www.cisco.com\",\n  \"notes\": \"Primary network hardware vendor\",\n  \"attachments\": []\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/assets/vendors", "host": ["{{baseUrl}}"], "path": ["api", "assets", "vendors"] }
+          }
+        },
+        {
+          "name": "Get Vendor",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/vendors/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "vendors", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Vendor UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Vendor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Inactive\",\n  \"vendor_criticality\": \"Low\",\n  \"notes\": \"No longer primary vendor\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/vendors/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "vendors", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Vendor UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Vendor",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/vendors/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "vendors", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Vendor UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contracts",
+      "item": [
+        {
+          "name": "List Contracts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/assets/contracts", "host": ["{{baseUrl}}"], "path": ["api", "assets", "contracts"] }
+          }
+        },
+        {
+          "name": "Create Contract",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contract_name\": \"Cisco Enterprise Agreement 2025\",\n  \"contract_type\": \"SaaS\",\n  \"vendor_uuid\": \"<vendor-uuid>\",\n  \"status\": \"Active\",\n  \"start_date\": \"2025-01-01T00:00:00Z\",\n  \"end_date\": \"2026-12-31T00:00:00Z\",\n  \"value\": 50000.00,\n  \"currency\": \"USD\",\n  \"payment_terms\": \"Net 30\",\n  \"renewal_type\": \"auto\",\n  \"notice_period\": 90,\n  \"renewal_reminder\": 60,\n  \"internal_owner\": \"John Smith\",\n  \"linked_assets\": [],\n  \"linked_licenses\": [],\n  \"linked_pos\": [],\n  \"documents\": [],\n  \"notes\": \"Annual enterprise agreement\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/assets/contracts", "host": ["{{baseUrl}}"], "path": ["api", "assets", "contracts"] }
+          }
+        },
+        {
+          "name": "Get Contract",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/contracts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "contracts", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Contract UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Contract",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Expired\",\n  \"notes\": \"Contract expired, renewal pending\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/contracts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "contracts", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Contract UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Contract",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/contracts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "contracts", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Contract UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Purchase Orders",
+      "item": [
+        {
+          "name": "List Purchase Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/assets/po", "host": ["{{baseUrl}}"], "path": ["api", "assets", "po"] }
+          }
+        },
+        {
+          "name": "Create Purchase Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"po_id\": \"PO-001-NYC-00001\",\n  \"vendor_uuid\": \"<vendor-uuid>\",\n  \"site_uuid\": \"<site-uuid>\",\n  \"quantity\": 10,\n  \"unit_cost\": 1500.00,\n  \"status\": \"DRAFT\",\n  \"department\": \"IT Infrastructure\",\n  \"category\": \"Network Hardware\",\n  \"manufacturer_uuid\": \"<manufacturer-uuid>\",\n  \"model\": \"Catalyst 9300\",\n  \"purchase_date\": \"2025-03-01\",\n  \"warranty_expiry\": \"2028-03-01\",\n  \"quantity_received\": 0,\n  \"owner_requester_id\": \"<user-id>\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/assets/po", "host": ["{{baseUrl}}"], "path": ["api", "assets", "po"] }
+          }
+        },
+        {
+          "name": "Get Purchase Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/po/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "po", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Purchase Order UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Purchase Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"quantity_received\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/po/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "po", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Purchase Order UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Purchase Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/po/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "po", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Purchase Order UUID" }]
+            }
+          }
+        }
       ]
     }
   ]

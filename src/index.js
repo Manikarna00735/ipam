@@ -19,6 +19,9 @@ const vlans = require('./routes/vlans');
 const interfaces = require('./routes/interfaces');
 const realtime = require('./realtime');
 const commonModule = require('./routes/commonmoudule');
+const vendors = require('./routes/assets/vendors');
+const contracts = require('./routes/assets/contracts');
+const purchaseOrders = require('./routes/assets/purchaseOrders');
 
 const app = express();
 app.use(cors());
@@ -46,6 +49,9 @@ app.use('/api/ipam', ipamRoutes);
   app.use('/api/ipam/vlans', vlans);
   app.use('/api/ipam/interfaces', interfaces);
   app.use('/api/ipam/common', commonModule);
+  app.use('/api/assets/vendors', vendors);
+  app.use('/api/assets/contracts', contracts);
+  app.use('/api/assets/po', purchaseOrders);
 
 app.use((err, req, res, next) => {
   console.error(err);

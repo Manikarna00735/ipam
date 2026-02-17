@@ -368,3 +368,80 @@ CREATE TABLE IF NOT EXISTS ips(
   user_id varchar(128)
 );
 
+-- table vendors
+CREATE TABLE vendors (
+  uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  vendor_type VARCHAR(100) NOT NULL,
+  category VARCHAR(100) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'Active',
+  internal_owner VARCHAR(255) NOT NULL,
+  primary_contact_name VARCHAR(255),
+  email VARCHAR(255) not null,
+  phone VARCHAR(50),
+  website VARCHAR(500),
+  vendor_criticality VARCHAR(50) NOT NULL DEFAULT 'Medium',
+  notes TEXT,
+  attachments TEXT[] DEFAULT '{}',
+  orgid varchar(128),
+  createdat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updatedat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  user_id varchar(128)
+);
+
+-- table contracts
+CREATE TABLE contracts (
+  uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  contract_name VARCHAR(255) NOT NULL,
+  vendor_uuid UUID references vendors("uuid"),
+  contract_type VARCHAR(100) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'Active',
+  start_date TIMESTAMP WITH TIME ZONE,
+  end_date TIMESTAMP WITH TIME ZONE,
+  value NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+  currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+  payment_terms VARCHAR(255),
+  renewal_type VARCHAR(50),
+  notice_period INTEGER DEFAULT 0,
+  renewal_reminder INTEGER DEFAULT 30,
+  internal_owner VARCHAR(255),
+  linked_assets TEXT[] DEFAULT '{}',
+  linked_licenses TEXT[] DEFAULT '{}',
+  linked_pos TEXT[] DEFAULT '{}',
+  documents TEXT[] DEFAULT '{}',
+  notes TEXT ,
+  orgid varchar(128),
+  createdat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updatedat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  user_id varchar(128)
+);
+
+
+
+-- table purchase_orders
+CREATE TABLE purchase_orders (
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    po_id VARCHAR(32) UNIQUE NOT NULL,
+    -- Business ID: PO-XXX-YYY-ZZZZZ
+    vendor_uuid UUID NOT NULL REFERENCES vendors(uuid),
+    department VARCHAR(255),
+    site_uuid UUID NOT NULL REFERENCES sites(uuid),
+    owner_requester_id VARCHAR(128),
+    status varchar(255) NOT NULL DEFAULT 'DRAFT',
+    -- Purchase details (single-line PO for V1)
+    category VARCHAR(255),
+    manufacturer_uuid UUID REFERENCES manufacturers(uuid),
+    model VARCHAR(255),
+    quantity INT NOT NULL CHECK (quantity > 0),
+    unit_cost NUMERIC(12,2) NOT NULL CHECK (unit_cost >= 0),
+    total_value NUMERIC(12,2) GENERATED ALWAYS AS (quantity * unit_cost) STORED,
+    purchase_date DATE,
+    warranty_expiry DATE,
+    -- Receiving tracking (for V1)
+    quantity_received INT NOT NULL DEFAULT 0 CHECK (quantity_received >= 0),
+  	orgid varchar(128),
+	createdat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+	updatedat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+	user_id varchar(128)
+    CONSTRAINT qty_received_lte_ordered CHECK (quantity_received <= quantity)
+);
