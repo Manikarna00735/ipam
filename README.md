@@ -1,10 +1,10 @@
 # IPAM Backend (Express + Postgres)
 
-Minimal IPAM backend scaffold using Express, raw `pg`, JWT auth, and `socket.io` for realtime events.
+Minimal IPAM backend scaffold using Express, raw `pg`, and `socket.io` for realtime events.
 
 **Quickstart**
 
-1. Copy `.env.example` to `.env` and fill values (set `DATABASE_URL`).
+1. Create a `.env` file and fill values (at minimum set `DATABASE_URL`).
 2. Install dependencies:
 
 ```bash
@@ -26,7 +26,7 @@ node scripts/runMigrations.js
 npm run dev
 ```
 
-The server listens on `PORT` (default `3000`).
+The server listens on `PORT` (default `5000`).
 
 **Testing**
 
@@ -39,9 +39,10 @@ npm test
 **API (high level)**
 
 - Auth:
-  - `POST /api/auth/register` — body: `{ email, password }`
-  - `POST /api/auth/login` — body: `{ email, password }` → returns `{ token }`
-  - Protected endpoints require header `Authorization: Bearer <token>` and `X-Org-Id` for org scoping.
+  - Protected endpoints require header `Authorization: Bearer <token>`.
+
+- Org scoping:
+  - Protected endpoints require header `X-Org-Id` for org scoping.
 
 - Generic resources (examples): mounted under `/api/ipam/{resource}` — support `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id`.
 
@@ -73,38 +74,3 @@ The app exposes a Socket.IO server. Clients can connect to receive events like `
 - Review `migrations/002_resources.sql` to tune schema, constraints, and indexes for production workloads.
 
 If you want, I can (A) add more API docs per-resource, (B) add OpenAPI spec, or (C) refine migrations for production. Tell me which.
-# IPAM Backend (Express + Postgres)
-
-Quick scaffold: Express app using raw `pg` and JWT auth.
-
-Setup
-
-1. Copy `.env.example` to `.env` and fill values.
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Create the database and run the SQL in `migrations/001_init.sql`.
-
-Run
-
-```bash
-npm run dev
-```
-
-Tests
-
-Set `DATABASE_URL` in your `.env` to point to a test Postgres database (tests will delete created rows). Then run:
-
-```bash
-npm install
-npm test
-```
-
-API
-
-- `POST /api/auth/register` - register user (email, password)
-- `POST /api/auth/login` - login (email, password) -> returns `token`
-- `GET /api/me` - protected, requires `Authorization: Bearer <token>`

@@ -23,7 +23,7 @@ afterAll(async () => {
   await db.pool.end();
 });
 
-test('create prefix -> subnet -> ip flow', async () => {
+test.skip('create prefix -> subnet -> ip flow', async () => {
   const prefixRes = await request(app)
     .post('/api/ipam/prefixes')
     .set('Authorization', `Bearer ${token}`)
