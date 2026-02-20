@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity, getTargetDisplay } = require('../utils/activityLogger');
 
 async function createWireless(req, res, next) {
   try {
@@ -13,6 +14,18 @@ async function createWireless(req, res, next) {
       payload.interfaces || null, req.orgid, payload.comments || null, 
       payload.status || null, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
+    
+    // Log Wireless creation
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'WIRELESS_CREATED',
+      event_label: 'Wireless Created',
+      target_type: 'wireless',
+      target_id: result.rows[0].uuid,
+      target_display: getTargetDisplay(result.rows[0], 'wireless')
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -55,6 +68,22 @@ async function updateWireless(req, res, next) {
     const sql = `UPDATE wireless SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
+    
+    // Log Wireless update
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'WIRELESS_UPDATED',
+      event_label: 'Wireless Updated',
+      target_type: 'wireless',
+      target_id: result.rows[0].uuid,
+      target_display: getTargetDisplay(result.rows[0], 'wireless'),
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -66,6 +95,18 @@ async function deleteWireless(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM wireless WHERE uuid = $1', [id]);
+    
+    // Log Wireless deletion
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'WIRELESS_DELETED',
+      event_label: 'Wireless Deleted',
+      target_type: 'wireless',
+      target_id: row.uuid,
+      target_display: getTargetDisplay(row, 'wireless')
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

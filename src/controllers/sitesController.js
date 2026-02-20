@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createSites(req, res, next) {
   try {
@@ -25,6 +26,18 @@ async function createSites(req, res, next) {
       req.user?.user_id || null
     ];
     const result = await db.query(sql, values);
+    
+    // Log Site creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'SITE_CREATED',
+      event_label: 'Site Created',
+      target_type: 'site',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -77,6 +90,22 @@ async function updateSite(req, res, next) {
       qValues = values.concat([req.user?.user_id || null, id]);
     }
     const result = await db.query(sql, qValues);
+    
+    // Log Site update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'SITE_UPDATED',
+      event_label: 'Site Updated',
+      target_type: 'site',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name,
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -88,6 +117,18 @@ async function deleteSite(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if ((row.orgid || row.org_id) !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM sites WHERE uuid = $1', [id]);
+    
+    // Log Site deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'SITE_DELETED',
+      event_label: 'Site Deleted',
+      target_type: 'site',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

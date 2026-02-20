@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createManufacturers(req, res, next) {
   try {
@@ -8,6 +9,18 @@ async function createManufacturers(req, res, next) {
     const values = [payload.name, payload.slug, payload?.description || null,  payload?.tags || null, req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
     const created = result.rows[0];
+    
+    // Log Manufacturer creation
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'MANUFACTURER_CREATED',
+      event_label: 'Manufacturer Created',
+      target_type: 'manufacturer',
+      target_id: created.uuid,
+      target_display: created.name
+    }, req);
+    
     res.status(201).json(created);
   } catch (err) { next(err); }
 }
@@ -39,6 +52,22 @@ async function updateManufacturer(req, res, next) {
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
     const updated = result.rows[0];
+    
+    // Log Manufacturer update
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'MANUFACTURER_UPDATED',
+      event_label: 'Manufacturer Updated',
+      target_type: 'manufacturer',
+      target_id: updated.uuid,
+      target_display: updated.name,
+      changes: {
+        old: row,
+        new: updated
+      }
+    }, req);
+    
     res.json(updated);
   } catch (err) { next(err); }
 }
@@ -50,6 +79,18 @@ async function deleteManufacturer(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM manufacturers WHERE uuid = $1', [id]);
+    
+    // Log Manufacturer deletion
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'MANUFACTURER_DELETED',
+      event_label: 'Manufacturer Deleted',
+      target_type: 'manufacturer',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

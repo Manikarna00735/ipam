@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createLocations(req, res, next) {
   try {
@@ -11,6 +12,18 @@ async function createLocations(req, res, next) {
        payload?.tenant || null, payload?.tenantgroup || null, req.orgid, payload?.status || null, 
        req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
+    
+    // Log Location creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'LOCATION_CREATED',
+      event_label: 'Location Created',
+      target_type: 'location',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -51,6 +64,22 @@ async function updateLocation(req, res, next) {
     const sql = `UPDATE locations SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
+    
+    // Log Location update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'LOCATION_UPDATED',
+      event_label: 'Location Updated',
+      target_type: 'location',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name,
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -62,6 +91,18 @@ async function deleteLocation(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM locations WHERE uuid = $1', [id]);
+    
+    // Log Location deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'LOCATION_DELETED',
+      event_label: 'Location Deleted',
+      target_type: 'location',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

@@ -1,4 +1,5 @@
 const db = require('../../db');
+const { logActivity, getTargetDisplay } = require('../../utils/activityLogger');
 
 // mandatory fields: po_id, vendor_uuid, site_uuid, quantity, unit_cost
 // Note: total_value is a GENERATED column (quantity * unit_cost) — never insert/update it directly
@@ -28,6 +29,18 @@ async function createPurchaseOrder(req, res, next) {
       req.user ? req.user.user_id : null,
     ];
     const result = await db.query(sql, values);
+    
+    // Log Purchase Order creation
+    await logActivity({
+      module: 'ams',
+      category: 'config',
+      event_type: 'PO_CREATED',
+      event_label: 'Purchase Order Created',
+      target_type: 'purchase_order',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].po_id
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -88,6 +101,22 @@ async function updatePurchaseOrder(req, res, next) {
     const sql = `UPDATE purchase_orders SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length + 1} WHERE uuid = $${values.length + 2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
+    
+    // Log Purchase Order update
+    await logActivity({
+      module: 'ams',
+      category: 'config',
+      event_type: 'PO_UPDATED',
+      event_label: 'Purchase Order Updated',
+      target_type: 'purchase_order',
+      target_id: result.rows[0].uuid,
+      target_display: getTargetDisplay(result.rows[0], 'purchase_order'),
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -99,6 +128,18 @@ async function deletePurchaseOrder(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM purchase_orders WHERE uuid = $1', [id]);
+    
+    // Log Purchase Order deletion
+    await logActivity({
+      module: 'ams',
+      category: 'config',
+      event_type: 'PO_DELETED',
+      event_label: 'Purchase Order Deleted',
+      target_type: 'purchase_order',
+      target_id: row.uuid,
+      target_display: getTargetDisplay(row, 'purchase_order')
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createRegions(req, res, next) {
   try {
@@ -9,6 +10,18 @@ async function createRegions(req, res, next) {
     const values = [payload.name, payload.slug, payload?.description || '', payload?.tagscsv || '', 
     payload?.sitescount || 0, req.orgid, req.user.user_id];
     const result = await db.query(sql, values);
+    
+    // Log Region creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'REGION_CREATED',
+      event_label: 'Region Created',
+      target_type: 'region',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name
+    }, req);
+    
     const created = result.rows[0];
     res.status(201).json(created);
   } catch (err) { next(err); }
@@ -40,6 +53,22 @@ async function updateRegion(req, res, next) {
     const sql = `UPDATE regions SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user.user_id, id);
     const result = await db.query(sql, values);
+    
+    // Log Region update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'REGION_UPDATED',
+      event_label: 'Region Updated',
+      target_type: 'region',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name,
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     const updated = result.rows[0];
     res.json(updated);
   } catch (err) { next(err); }
@@ -52,6 +81,18 @@ async function deleteRegion(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM regions WHERE uuid = $1', [id]);
+    
+    // Log Region deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'REGION_DELETED',
+      event_label: 'Region Deleted',
+      target_type: 'region',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

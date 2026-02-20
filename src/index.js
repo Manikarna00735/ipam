@@ -22,6 +22,7 @@ const commonModule = require('./routes/commonmoudule');
 const vendors = require('./routes/assets/vendors');
 const contracts = require('./routes/assets/contracts');
 const purchaseOrders = require('./routes/assets/purchaseOrders');
+const activityLogs = require('./routes/activity_logs');
 
 const app = express();
 app.use(cors());
@@ -52,6 +53,7 @@ app.use('/api/ipam', ipamRoutes);
   app.use('/api/assets/vendors', vendors);
   app.use('/api/assets/contracts', contracts);
   app.use('/api/assets/po', purchaseOrders);
+  app.use('/api/activity-logs', activityLogs);
 
 app.use((err, req, res, next) => {
   console.error(err);

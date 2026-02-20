@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity, getTargetDisplay } = require('../utils/activityLogger');
 
 async function createCircuits(req, res, next) {
   try {
@@ -13,6 +14,18 @@ async function createCircuits(req, res, next) {
     payload.terminates || null,
     payload.type, payload.status, payload?.comments || null, req.orgid, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
+    
+    // Log Circuit creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'CIRCUIT_CREATED',
+      event_label: 'Circuit Created',
+      target_type: 'circuit',
+      target_id: result.rows[0].uuid,
+      target_display: getTargetDisplay(result.rows[0], 'circuit')
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -53,6 +66,22 @@ async function updateCircuit(req, res, next) {
     const sql = `UPDATE circuits SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
+    
+    // Log Circuit update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'CIRCUIT_UPDATED',
+      event_label: 'Circuit Updated',
+      target_type: 'circuit',
+      target_id: result.rows[0].uuid,
+      target_display: getTargetDisplay(result.rows[0], 'circuit'),
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -64,6 +93,18 @@ async function deleteCircuit(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM circuits WHERE uuid = $1', [id]);
+    
+    // Log Circuit deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'CIRCUIT_DELETED',
+      event_label: 'Circuit Deleted',
+      target_type: 'circuit',
+      target_id: row.uuid,
+      target_display: getTargetDisplay(row, 'circuit')
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

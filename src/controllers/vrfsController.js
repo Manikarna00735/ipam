@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createVrfs(req, res, next) {
   try {
@@ -11,6 +12,18 @@ async function createVrfs(req, res, next) {
       payload?.importtarget || null, payload?.exporttarget || null,
       req.orgid, payload?.comments || null, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
+    
+    // Log VRF creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'VRF_CREATED',
+      event_label: 'VRF Created',
+      target_type: 'vrf',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -41,6 +54,22 @@ async function updateVrf(req, res, next) {
     const sql = `UPDATE vrfs SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
+    
+    // Log VRF update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'VRF_UPDATED',
+      event_label: 'VRF Updated',
+      target_type: 'vrf',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name,
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -52,6 +81,18 @@ async function deleteVrf(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM vrfs WHERE uuid = $1', [id]);
+    
+    // Log VRF deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'VRF_DELETED',
+      event_label: 'VRF Deleted',
+      target_type: 'vrf',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

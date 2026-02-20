@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createProviders(req, res, next) {
   try {
@@ -8,6 +9,18 @@ async function createProviders(req, res, next) {
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,current_timestamp) RETURNING *`;
     const values = [payload.name, payload.slug, payload?.description || '', payload?.comments || '', payload?.asnscsv || '', payload?.tagscsv || '', req.orgid, req.user.user_id];
     const result = await db.query(sql, values);
+    
+    // Log Provider creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'PROVIDER_CREATED',
+      event_label: 'Provider Created',
+      target_type: 'provider',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name
+    }, req);
+    
     const created = result.rows[0];
     res.status(201).json(created);
   } catch (err) { next(err); }
@@ -39,6 +52,22 @@ async function updateProvider(req, res, next) {
     const sql = `UPDATE providers SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user.user_id, id);
     const result = await db.query(sql, values);
+    
+    // Log Provider update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'PROVIDER_UPDATED',
+      event_label: 'Provider Updated',
+      target_type: 'provider',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name,
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     const updated = result.rows[0];
     res.json(updated);
   } catch (err) { next(err); }
@@ -51,6 +80,18 @@ async function deleteProvider(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM providers WHERE uuid = $1', [id]);
+    
+    // Log Provider deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'PROVIDER_DELETED',
+      event_label: 'Provider Deleted',
+      target_type: 'provider',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

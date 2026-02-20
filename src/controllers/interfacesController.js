@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createInterfaces(req, res, next) {
   try {
@@ -38,6 +39,18 @@ async function createInterfaces(req, res, next) {
       req.user ? req.user.user_id : null
     ];
     const result = await db.query(sql, values);
+    
+    // Log Interface creation
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'INTERFACE_CREATED',
+      event_label: 'Interface Created',
+      target_type: 'interface',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -88,6 +101,22 @@ async function updateInterface(req, res, next) {
     const sql = `UPDATE interfaces SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
+    
+    // Log Interface update
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'INTERFACE_UPDATED',
+      event_label: 'Interface Updated',
+      target_type: 'interface',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name,
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -99,6 +128,18 @@ async function deleteInterface(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM interfaces WHERE uuid = $1', [id]);
+    
+    // Log Interface deletion
+    await logActivity({
+      module: 'dcim',
+      category: 'config',
+      event_type: 'INTERFACE_DELETED',
+      event_label: 'Interface Deleted',
+      target_type: 'interface',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

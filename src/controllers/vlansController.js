@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logActivity } = require('../utils/activityLogger');
 
 async function createVlans(req, res, next) {
   try {
@@ -11,6 +12,18 @@ async function createVlans(req, res, next) {
       payload?.tag || payload?.tagscsv || null, payload?.tenant || null,
       req.orgid, payload?.comments || null, req.user ? req.user.user_id : null];
     const result = await db.query(sql, values);
+    
+    // Log VLAN creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'VLAN_CREATED',
+      event_label: 'VLAN Created',
+      target_type: 'vlan',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name
+    }, req);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -41,6 +54,22 @@ async function updateVlan(req, res, next) {
     const sql = `UPDATE vlans SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length+1} WHERE uuid = $${values.length+2} RETURNING *`;
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
+    
+    // Log VLAN update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'VLAN_UPDATED',
+      event_label: 'VLAN Updated',
+      target_type: 'vlan',
+      target_id: result.rows[0].uuid,
+      target_display: result.rows[0].name,
+      changes: {
+        old: row,
+        new: result.rows[0]
+      }
+    }, req);
+    
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -52,6 +81,18 @@ async function deleteVlan(req, res, next) {
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     await db.query('DELETE FROM vlans WHERE uuid = $1', [id]);
+    
+    // Log VLAN deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'VLAN_DELETED',
+      event_label: 'VLAN Deleted',
+      target_type: 'vlan',
+      target_id: row.uuid,
+      target_display: row.name
+    }, req);
+    
     res.status(204).send();
   } catch (err) { next(err); }
 }

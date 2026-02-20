@@ -2,6 +2,7 @@ const db = require('../db');
 const { Address4, Address6 } = require('ip-address');
 const realtime = require('../realtime');
 const common = require('../common');
+const { logActivity, getTargetDisplay } = require('../utils/activityLogger');
 
 // Helper function to check if two IP ranges overlap
 function checkRangesOverlap(range1, range2) {
@@ -105,6 +106,17 @@ async function createPrefix(req, res, next) {
     const result = await db.query(sql, values);
     const createdPrefix = result.rows[0];
     
+    // Log Prefix creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'PREFIX_CREATED',
+      event_label: 'Network Prefix Created',
+      target_type: 'prefix',
+      target_id: createdPrefix.uuid,
+      target_display: getTargetDisplay(createdPrefix, 'prefix')
+    }, req);
+    
     // Emit real-time event
     realtime.emit(`org_${req.orgid}`,'prefixes:created', createdPrefix);
     
@@ -190,6 +202,21 @@ async function updatePrefix(req, res, next) {
     const result = await db.query(sql, qValues);
     const updatedPrefix = result.rows[0];
     
+    // Log Prefix update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'PREFIX_UPDATED',
+      event_label: 'Network Prefix Updated',
+      target_type: 'prefix',
+      target_id: updatedPrefix.uuid,
+      target_display: getTargetDisplay(updatedPrefix, 'prefix'),
+      changes: {
+        old: row,
+        new: updatedPrefix
+      }
+    }, req);
+    
     // Emit real-time event
     realtime.emit(`org_${req.orgid}`,'prefixes:updated', updatedPrefix);
     
@@ -213,6 +240,17 @@ async function deletePrefix(req, res, next) {
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     
     await db.query('DELETE FROM networks WHERE uuid = $1', [id]);
+    
+    // Log Prefix deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'PREFIX_DELETED',
+      event_label: 'Network Prefix Deleted',
+      target_type: 'prefix',
+      target_id: row.uuid,
+      target_display: getTargetDisplay(row, 'prefix')
+    }, req);
     
     // Emit real-time event
     realtime.emit(`org_${req.orgid}`,'prefixes:deleted', { id, org_id: req.orgid });
@@ -504,6 +542,30 @@ async function updateSubnet(req, res, next) {
     
     const result = await db.query(sql, qValues);
     const updatedSubnet = result.rows[0];
+        // Log Subnet creation
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'SUBNET_CREATED',
+      event_label: 'Subnet Created',
+      target_type: 'subnet',
+      target_id: createdSubnet.uuid,
+      target_display: getTargetDisplay(createdSubnet, 'subnet')
+    }, req);
+        // Log Subnet update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'SUBNET_UPDATED',
+      event_label: 'Subnet Updated',
+      target_type: 'subnet',
+      target_id: updatedSubnet.uuid,
+      target_display: getTargetDisplay(updatedSubnet, 'subnet'),
+      changes: {
+        old: row,
+        new: updatedSubnet
+      }
+    }, req);
     
     // Emit real-time event
     realtime.emit(`org_${req.orgid}`,'subnets:updated', updatedSubnet);
@@ -534,6 +596,17 @@ async function deleteSubnet(req, res, next) {
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     
     await db.query('DELETE FROM subnets WHERE uuid = $1', [subnetId]);
+    
+    // Log Subnet deletion
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'SUBNET_DELETED',
+      event_label: 'Subnet Deleted',
+      target_type: 'subnet',
+      target_id: row.uuid,
+      target_display: getTargetDisplay(row, 'subnet')
+    }, req);
     
     // Emit real-time event
     realtime.emit(`org_${req.orgid}`,'subnets:deleted', { id: subnetId, org_id: req.orgid });
@@ -913,6 +986,21 @@ async function updateIP(req, res, next) {
     
     const result = await db.query(sql, qValues);
     const updatedIP = result.rows[0];
+    
+    // Log IP update
+    await logActivity({
+      module: 'ipam',
+      category: 'config',
+      event_type: 'IP_UPDATED',
+      event_label: 'IP Address Updated',
+      target_type: 'ip',
+      target_id: updatedIP.uuid,
+      target_display: getTargetDisplay(updatedIP, 'ip'),
+      changes: {
+        old: row,
+        new: updatedIP
+      }
+    }, req);
     
     // Emit real-time event
     realtime.emit(`org_${req.orgid}`,'ips:updated', updatedIP);

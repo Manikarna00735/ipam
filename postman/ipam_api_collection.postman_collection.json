@@ -1331,6 +1331,76 @@
           }
         }
       ]
+    },
+    {
+      "name": "Activity Logs",
+      "item": [
+        {
+          "name": "List Activity Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/activity-logs?page=1&page_size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activity-logs"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number" },
+                { "key": "page_size", "value": "50", "description": "Results per page (max 100)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Activity Log",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module\": \"ipam\",\n  \"category\": \"config\",\n  \"event_type\": \"VRF_CREATED\",\n  \"event_label\": \"VRF Created\",\n  \"target_type\": \"vrf\",\n  \"target_id\": \"vrf_prod_001\",\n  \"target_display\": \"Production VRF\",\n  \"source\": \"api\",\n  \"severity\": \"info\",\n  \"outcome\": \"success\",\n  \"metadata\": {\n    \"description\": \"New production VRF for ISP connections\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/activity-logs", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs"] }
+          }
+        },
+        {
+          "name": "Query Activity Logs",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"page_size\": 50,\n  \"from\": \"2026-02-01T00:00:00Z\",\n  \"to\": \"2026-02-28T23:59:59Z\",\n  \"module\": \"ipam\",\n  \"categories\": [\"security\", \"config\"],\n  \"severities\": [\"info\", \"warning\"],\n  \"event_types\": [\"VRF_CREATED\", \"VRF_UPDATED\"],\n  \"outcome\": \"success\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/activity-logs/query", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs", "query"] }
+          }
+        },
+        {
+          "name": "Get Activity Log",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/activity-logs/:event_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activity-logs", ":event_id"],
+              "variable": [{ "key": "event_id", "value": "", "description": "Activity Log Event ID" }]
+            }
+          }
+        }
+      ]
     }
-  ]
-}
