@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
-const { requireOrg } = require('../middleware/org');
-const manufacturers = require('../controllers/manufacturersController');
-const { requireFieldsTypes } = require('../middleware/validators');
+const { requireAuth } = require('../../middleware/auth');
+const { requireOrg } = require('../../middleware/org');
+const manufacturers = require('../../controllers/ipam/manufacturersController');
+const { requireFieldsTypes } = require('../../middleware/validators');
 
 router.use(requireAuth);
 router.use(requireOrg);

@@ -1,5 +1,5 @@
-const db = require('../db');
-const { logActivity } = require('../utils/activityLogger');
+const db = require('../../db');
+const { logActivity } = require('../../utils/activityLogger');
 
 async function createVrfs(req, res, next) {
   try {

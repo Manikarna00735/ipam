@@ -1,5 +1,5 @@
-const db = require('../db');
-const { logActivity } = require('../utils/activityLogger');
+const db = require('../../db');
+const { logActivity } = require('../../utils/activityLogger');
 
 async function createInterfaces(req, res, next) {
   try {

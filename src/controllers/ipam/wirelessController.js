@@ -1,5 +1,5 @@
-const db = require('../db');
-const { logActivity, getTargetDisplay } = require('../utils/activityLogger');
+const db = require('../../db');
+const { logActivity, getTargetDisplay } = require('../../utils/activityLogger');
 
 async function createWireless(req, res, next) {
   try {

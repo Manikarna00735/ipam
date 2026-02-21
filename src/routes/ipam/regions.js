@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
-const { requireOrg } = require('../middleware/org');
-const regions = require('../controllers/regionsController');
-const { requireFieldsTypes } = require('../middleware/validators');
+const { requireAuth } = require('../../middleware/auth');
+const { requireOrg } = require('../../middleware/org');
+const regions = require('../../controllers/ipam/regionsController');
+const { requireFieldsTypes } = require('../../middleware/validators');
 
 router.use(requireAuth);
 router.use(requireOrg);
