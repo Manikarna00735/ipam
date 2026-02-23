@@ -1,5 +1,6 @@
 const db = require('../../db');
 const { logActivity } = require('../../utils/activityLogger');
+const { getOrgDetails, getUserDetails } = require('../../utils/firebase');
 
 async function createProviders(req, res, next) {
   try {
@@ -28,6 +29,7 @@ async function createProviders(req, res, next) {
 
 async function listProviders(req, res, next) {
   try {
+    // const rows = await getOrgDetails(req.orgid)
     const rows = (await db.query('SELECT * FROM providers WHERE orgid = $1 ORDER BY name', [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }

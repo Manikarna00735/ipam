@@ -451,44 +451,38 @@ DROP TABLE IF EXISTS activity_logs;
 CREATE TABLE IF NOT EXISTS activity_logs (
     -- Primary key
     event_id        TEXT PRIMARY KEY DEFAULT 'evt_' || gen_random_uuid()::text,
-
     -- Timestamp (always UTC)
     timestamp       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
     -- Scope
     orgid           VARCHAR(128) NOT NULL,
-
+    org_name        TEXT,
+    team_id         TEXT,
+    team_name       TEXT,
     -- Classification
     module          TEXT NOT NULL,        -- core | alerts | ams | ipam | system
     category        TEXT NOT NULL,        -- security | governance | operational | config | automation | billing
     severity        TEXT NOT NULL DEFAULT 'info',    -- info | warning | critical
     outcome         TEXT NOT NULL DEFAULT 'success', -- success | failed | denied | partial | pending
-
     -- Actor (who did it)
     actor_type      TEXT NOT NULL DEFAULT 'user',    -- user | service_account | integration | system
     actor_id        TEXT NOT NULL,
     actor_display   TEXT NOT NULL,        -- human-readable name
-
     -- Event
     event_type      TEXT NOT NULL,        -- stable code e.g. LOGIN_SUCCESS, ASSET_CREATED
     event_label     TEXT NOT NULL,        -- friendly label e.g. "Login Success"
-
     -- Target (what was acted upon)
     target_type     TEXT,                -- user | org | asset | incident | vrf | ip_address | etc.
     target_id       TEXT,
     target_display  TEXT,
-
     -- Source
     source          TEXT,                -- web | mobile | api | webhook | email | sms | system
     ip_address      INET,               -- use INET type for proper IP validation
     user_agent      TEXT,
     request_id      TEXT,
     correlation_id  TEXT,
-
     -- Payload
     metadata        JSONB,              -- arbitrary event data
     changes         JSONB,              -- { "old": {...}, "new": {...} } for diffs
-
     -- Immutability: no updated_at column, logs are append-only
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
