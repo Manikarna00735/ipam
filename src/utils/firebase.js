@@ -20,11 +20,15 @@ function initializeFirebase() {
   try {
     if (!admin.apps.length) {
       // Load service account key from environment or file
-      const serviceAccountPath = path.join(__dirname, '../../firebase-service-account.json');
-      
+    //   const serviceAccountPath = path.join(__dirname, '../../firebase-service-account.json');
+        const renderPath = path.join(process.cwd(), 'firebase-service-account.json');
+        const localPath = path.join(__dirname, '../../firebase-service-account.json');
+
+// Determine which path to use
+        const finalPath = fs.existsSync(renderPath) ? renderPath : localPath;
       // Check if file exists
-      if (!fs.existsSync(serviceAccountPath)) {
-        const errMsg = `Firebase service account file not found at: ${serviceAccountPath}\n` +
+      if (!fs.existsSync(finalPath)) {
+        const errMsg = `Firebase service account file not found at: ${finalPath}\n` +
           `Please:\n` +
           `1. Download your service account JSON from Firebase Console\n` +
           `2. Save it as: firebase-service-account.json in your project root\n` +
@@ -35,7 +39,7 @@ function initializeFirebase() {
         return null;
       }
 
-      const serviceAccount = require(serviceAccountPath);
+      const serviceAccount = require(finalPath);
 
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
