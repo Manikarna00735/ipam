@@ -543,3 +543,34 @@ CREATE TRIGGER trg_activity_logs_immutable
     BEFORE UPDATE OR DELETE ON activity_logs
     FOR EACH ROW
     EXECUTE FUNCTION prevent_activity_log_mutation();
+
+
+--table assets
+CREATE TABLE assets (
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    asset_id VARCHAR(64) UNIQUE NOT NULL,
+    -- Business ID: ABC::XYZ::123456
+    category VARCHAR(255),
+    manufacturer_uuid UUID REFERENCES manufacturers(uuid),
+    model VARCHAR(255),
+    serial_no TEXT,
+    department VARCHAR(255),
+    site_uuid UUID NOT NULL REFERENCES sites(uuid),
+    status VARCHAR(255) NOT NULL,
+    assigned_to varchar(128),
+    cost_center VARCHAR(255),
+    -- OPTIONAL link to Procurement
+    purchase_order_uuid UUID REFERENCES purchase_orders("uuid"),
+    purchase_date DATE,
+    warranty_expiry DATE,
+    expected_eol DATE,
+    purchase_cost NUMERIC(12,2),
+    depreciation_method VARCHAR(255),
+    depreciation_rate_pct NUMERIC(5,2),
+    qr_code_url TEXT NOT NULL,
+    qr_code_generated_at TIMESTAMP NOT NULL DEFAULT now(),
+  	orgid varchar(128),
+	createdat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+	updatedat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
+	user_id varchar(128)
+);

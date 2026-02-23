@@ -102,6 +102,76 @@ async function updatePurchaseOrder(req, res, next) {
     values.push(req.user ? req.user.user_id : null, id);
     const result = await db.query(sql, values);
     
+    // Auto-create assets if status changed to RECEIVED or PARTIALLY_RECEIVED
+    const newStatus = payload.status || row.status;
+    if ((newStatus === 'RECEIVED' || newStatus === 'PARTIALLY_RECEIVED') && 
+        (row.status !== newStatus)) {
+      const assetsToCreate = newStatus === 'RECEIVED' ? row.quantity : (payload.quantity_received || row.quantity_received);
+      
+      if (assetsToCreate > 0) {
+        // Generate base asset_id from PO id
+        const baseAssetId = row.po_id.replace(/-/g, '_');
+        
+        // Build all asset values for bulk insert
+        let assetValues = [];
+        let placeholderIndex = 1;
+        let valueSets = [];
+        
+        for (let i = 0; i < assetsToCreate; i++) {
+          const assetId = `${baseAssetId}_${i + 1}`;
+          const qrCodeUrl = `${process.env.QR_CODE_BASE_URL || 'https://qr.company.com'}/${assetId}`;
+          
+          valueSets.push(
+            `($${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, ` +
+            `$${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, ` +
+            `$${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, ` +
+            `current_timestamp, $${placeholderIndex++}, $${placeholderIndex++}, current_timestamp)`
+          );
+          
+          assetValues.push(
+            assetId,
+            row.category || null,
+            row.manufacturer_uuid || null,
+            row.model || null,
+            row.department || null,
+            row.site_uuid,
+            'Active',
+            row.uuid,
+            row.purchase_date || null,
+            row.warranty_expiry || null,
+            row.unit_cost || null,
+            qrCodeUrl,
+            req.orgid,
+            req.user ? req.user.user_id : null
+          );
+        }
+        
+        // Single bulk insert statement
+        const bulkInsertSql = `INSERT INTO assets (
+          asset_id, category, manufacturer_uuid, model, department, site_uuid, status,
+          purchase_order_uuid, purchase_date, warranty_expiry, purchase_cost,
+          qr_code_url, qr_code_generated_at, orgid, user_id, updatedat
+        ) VALUES ${valueSets.join(', ')}`;
+        
+        await db.query(bulkInsertSql, assetValues);
+        
+        // Log asset auto-creation
+        await logActivity({
+          module: 'ams',
+          category: 'automation',
+          event_type: 'ASSETS_AUTO_CREATED',
+          event_label: `${assetsToCreate} Asset(s) Auto-Created from PO`,
+          target_type: 'purchase_order',
+          target_id: result.rows[0].uuid,
+          target_display: result.rows[0].po_id,
+          metadata: {
+            assets_created: assetsToCreate,
+            from_status: newStatus
+          }
+        }, req);
+      }
+    }
+    
     // Log Purchase Order update
     await logActivity({
       module: 'ams',

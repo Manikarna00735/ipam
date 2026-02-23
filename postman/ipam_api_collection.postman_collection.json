@@ -1333,6 +1333,92 @@
       ]
     },
     {
+      "name": "Assets",
+      "description": "Asset management CRUD operations. Track physical IT assets including servers, network equipment, and hardware with warranty and depreciation tracking. All operations include automatic activity logging.",
+      "item": [
+        {
+          "name": "List Assets",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/assets", "host": ["{{baseUrl}}"], "path": ["api", "assets"] }
+          }
+        },
+        {
+          "name": "Create Asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_id\": \"SRV-DC-001\",\n  \"category\": \"Server\",\n  \"manufacturer_uuid\": \"mfr-uuid-123\",\n  \"model\": \"Dell PowerEdge R750\",\n  \"serial_no\": \"ABC123456789\",\n  \"department\": \"Infrastructure\",\n  \"site_uuid\": \"site-uuid-123\",\n  \"status\": \"Active\",\n  \"assigned_to\": \"john.smith@company.com\",\n  \"cost_center\": \"IT-001\",\n  \"purchase_order_uuid\": \"po-uuid-123\",\n  \"purchase_date\": \"2024-06-15\",\n  \"warranty_expiry\": \"2027-06-15\",\n  \"expected_eol\": \"2030-06-15\",\n  \"purchase_cost\": 8500.00,\n  \"depreciation_method\": \"Straight-line\",\n  \"depreciation_rate_pct\": 20.00,\n  \"qr_code_url\": \"https://qr.company.com/SRV-DC-001\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/assets", "host": ["{{baseUrl}}"], "path": ["api", "assets"] }
+          }
+        },
+        {
+          "name": "Get Asset",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Asset UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Asset",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Maintenance\",\n  \"assigned_to\": \"jane.doe@company.com\",\n  \"warranty_expiry\": \"2027-06-15\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Asset UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Asset",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Asset UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Activity Logs",
       "description": "Activity logging system with automatic Firestore enrichment. All logs automatically include org_name (from Firestore) and actor_display (human-readable user name from Firestore).",
       "item": [

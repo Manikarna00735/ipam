@@ -22,6 +22,7 @@ const commonModule = require('./routes/ipam/commonmoudule');
 const vendors = require('./routes/assets/vendors');
 const contracts = require('./routes/assets/contracts');
 const purchaseOrders = require('./routes/assets/purchaseOrders');
+const assets = require('./routes/assets/assets');
 const activityLogs = require('./routes/activity_logs');
 
 const app = express();
@@ -50,10 +51,14 @@ app.use('/api/ipam', ipamRoutes);
   app.use('/api/ipam/vlans', vlans);
   app.use('/api/ipam/interfaces', interfaces);
   app.use('/api/ipam/common', commonModule);
-  app.use('/api/assets/vendors', vendors);
-  app.use('/api/assets/contracts', contracts);
-  app.use('/api/assets/po', purchaseOrders);
-  app.use('/api/activity-logs', activityLogs);
+  // Assets Management
+  app.use('/api/assets/vendors', vendors);        // /api/assets/vendors (CRUD)
+  app.use('/api/assets/contracts', contracts);    // /api/assets/contracts (CRUD)
+  app.use('/api/assets/po', purchaseOrders);      // /api/assets/po (CRUD)
+  app.use('/api/assets', assets);                 // /api/assets (POST create, GET list, GET/:id, PUT/:id, DELETE/:id)
+  
+  // Activity Logs
+  app.use('/api/activity-logs', activityLogs);    // /api/activity-logs/query (filter & list)
 
 app.use((err, req, res, next) => {
   console.error(err);
