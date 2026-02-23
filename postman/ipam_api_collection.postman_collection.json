@@ -1334,28 +1334,11 @@
     },
     {
       "name": "Activity Logs",
+      "description": "Activity logging system with automatic Firestore enrichment. All logs automatically include org_name (from Firestore) and actor_display (human-readable user name from Firestore).",
       "item": [
         {
-          "name": "List Activity Logs",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "X-Org-Id", "value": "{{orgId}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/activity-logs?page=1&page_size=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "activity-logs"],
-              "query": [
-                { "key": "page", "value": "1", "description": "Page number" },
-                { "key": "page_size", "value": "50", "description": "Results per page (max 100)" }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Create Activity Log",
+          "name": "List Activity Logs (POST /query)",
+          "description": "Query activity logs with advanced filtering. Returns paginated results with Firestore-enriched org_name and actor_display fields.",
           "request": {
             "method": "POST",
             "header": [
@@ -1365,29 +1348,82 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"module\": \"ipam\",\n  \"category\": \"config\",\n  \"event_type\": \"VRF_CREATED\",\n  \"event_label\": \"VRF Created\",\n  \"target_type\": \"vrf\",\n  \"target_id\": \"vrf_prod_001\",\n  \"target_display\": \"Production VRF\",\n  \"source\": \"api\",\n  \"severity\": \"info\",\n  \"outcome\": \"success\",\n  \"metadata\": {\n    \"description\": \"New production VRF for ISP connections\"\n  }\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/api/activity-logs", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs"] }
-          }
-        },
-        {
-          "name": "Query Activity Logs",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "X-Org-Id", "value": "{{orgId}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"page\": 1,\n  \"page_size\": 50,\n  \"from\": \"2026-02-01T00:00:00Z\",\n  \"to\": \"2026-02-28T23:59:59Z\",\n  \"module\": \"ipam\",\n  \"categories\": [\"security\", \"config\"],\n  \"severities\": [\"info\", \"warning\"],\n  \"event_types\": [\"VRF_CREATED\", \"VRF_UPDATED\"],\n  \"outcome\": \"success\"\n}"
+              "raw": "{\n  \"page\": 1,\n  \"page_size\": 50,\n  \"from\": \"2026-02-01T00:00:00Z\",\n  \"to\": \"2026-02-28T23:59:59Z\",\n  \"module\": \"ipam\",\n  \"categories\": [\"config\"],\n  \"severities\": [\"info\", \"warning\"],\n  \"outcome\": \"success\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/activity-logs/query", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs", "query"] }
           }
         },
         {
-          "name": "Get Activity Log",
+          "name": "Create Activity Log (Manual)",
+          "description": "Manually create an activity log entry. org_name and actor_display are automatically populated from Firestore based on orgid and actor_id.",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module\": \"ipam\",\n  \"category\": \"config\",\n  \"event_type\": \"DEVICE_CREATED\",\n  \"event_label\": \"Device Created\",\n  \"actor_id\": \"user-12345\",\n  \"actor_type\": \"user\",\n  \"target_type\": \"device\",\n  \"target_id\": \"device-uuid-123\",\n  \"target_display\": \"Server-01\",\n  \"source\": \"api\",\n  \"severity\": \"info\",\n  \"outcome\": \"success\",\n  \"metadata\": {\n    \"device_type\": \"Server\",\n    \"site\": \"DC-North\"\n  },\n  \"changes\": {\n    \"new\": { \"name\": \"Server-01\", \"site\": \"DC-North\" }\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/activity-logs", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs"] }
+          }
+        },
+        {
+          "name": "Query Activity Logs (by module)",
+          "description": "Query logs filtered by module (ipam, assets, system, etc.) with Firestore-enriched fields.",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"page_size\": 25,\n  \"module\": \"ipam\",\n  \"categories\": [\"config\", \"operational\"],\n  \"severities\": [\"info\", \"warning\", \"critical\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/activity-logs/query", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs", "query"] }
+          }
+        },
+        {
+          "name": "Query Activity Logs (by actor)",
+          "description": "Search activity logs by actor (user) with full-text search on actor_display (Firestore-enriched human name).",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"page_size\": 50,\n  \"actor_search\": \"John Doe\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/activity-logs/query", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs", "query"] }
+          }
+        },
+        {
+          "name": "Query Activity Logs (by target)",
+          "description": "Search activity logs by target resource (device, vrf, site, etc.) with target_display search.",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"page_size\": 50,\n  \"target_type\": \"device\",\n  \"target_search\": \"Server\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/activity-logs/query", "host": ["{{baseUrl}}"], "path": ["api", "activity-logs", "query"] }
+          }
+        },
+        {
+          "name": "Get Activity Log by ID",
+          "description": "Retrieve a single activity log entry by event_id. Response includes org_name and actor_display from Firestore.",
           "request": {
             "method": "GET",
             "header": [
@@ -1398,7 +1434,7 @@
               "raw": "{{baseUrl}}/api/activity-logs/:event_id",
               "host": ["{{baseUrl}}"],
               "path": ["api", "activity-logs", ":event_id"],
-              "variable": [{ "key": "event_id", "value": "", "description": "Activity Log Event ID" }]
+              "variable": [{ "key": "event_id", "value": "", "description": "Activity Log Event ID (evt_xxxx)" }]
             }
           }
         }

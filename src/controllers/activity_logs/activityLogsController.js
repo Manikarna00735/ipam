@@ -1,4 +1,5 @@
 const db = require('../../db');
+const { getOrgDetails, getUserDetails } = require('../../utils/firebase');
 
 /**
  * Write a single activity log event
@@ -38,8 +39,38 @@ async function createActivityLog(req, res, next) {
       return res.status(400).json({ error: `Invalid actor_type: ${payload.actor_type}` });
     }
 
+    // Get org name from Firestore
+    const orgUuid = req.orgid;
+    let orgName = 'unknown';
+    if (orgUuid) {
+      const orgDetails = await getOrgDetails(orgUuid);
+      if (orgDetails && orgDetails.name) {
+        orgName = orgDetails.name;
+      }
+    }
+
+    // Get actor display name from Firestore user details
+    const actorId = payload.actor_id || req.user?.user_id || 'system';
+    let actorDisplay = payload.actor_display;
+    
+    if (!actorDisplay && actorId !== 'system') {
+      const userDetails = await getUserDetails(actorId);
+      if (userDetails && userDetails.fullName) {
+        actorDisplay = userDetails.fullName;      
+    } else if (userDetails && userDetails.name) {
+        actorDisplay = userDetails.name;      
+    } else if (userDetails && userDetails.email) {
+        actorDisplay = userDetails.email;
+      }
+    }
+    
+    // Fallback for actor display
+    if (!actorDisplay) {
+      actorDisplay = req.user?.user_id || 'System';
+    }
+
     const sql = `INSERT INTO activity_logs (
-      orgid,
+      orgid, org_name,
       module, category, severity, outcome,
       actor_type, actor_id, actor_display,
       event_type, event_label,
@@ -48,25 +79,26 @@ async function createActivityLog(req, res, next) {
       request_id, correlation_id,
       metadata, changes
     ) VALUES (
-      $1,
-      $2, $3, $4, $5,
-      $6, $7, $8,
-      $9, $10,
-      $11, $12, $13,
-      $14, $15, $16,
-      $17, $18,
-      $19, $20
+      $1, $2,
+      $3, $4, $5, $6,
+      $7, $8, $9,
+      $10, $11,
+      $12, $13, $14,
+      $15, $16, $17,
+      $18, $19,
+      $20, $21
     ) RETURNING event_id, timestamp`;
 
     const values = [
-      req.orgid,
+      orgUuid,
+      orgName,
       payload.module,
       payload.category,
       payload.severity || 'info',
       payload.outcome || 'success',
       payload.actor_type || 'user',
-      payload.actor_id || req.user?.user_id || 'system',
-      payload.actor_display || req.user?.user_id || 'System',
+      actorId,
+      actorDisplay,
       payload.event_type,
       payload.event_label,
       payload.target_type || null,

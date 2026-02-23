@@ -1,4 +1,5 @@
 const db = require('../db');
+const { getOrgDetails, getUserDetails } = require('./firebase');
 
 /**
  * Safely extract target display value with fallbacks.
@@ -114,8 +115,38 @@ async function logActivity(event, req) {
       throw new Error(`Invalid actor_type: ${event.actor_type}`);
     }
 
+    // Get org name from Firestore
+    const orgUuid = req?.orgid || 'unknown';
+    let orgName = 'unknown';
+    if (orgUuid !== 'unknown') {
+      const orgDetails = await getOrgDetails(orgUuid);
+      if (orgDetails && orgDetails.name) {
+        orgName = orgDetails.name;
+      }
+    }
+
+    // Get actor display name from Firestore user details
+    const actorId = event.actor_id || req?.user?.user_id || 'system';
+    let actorDisplay = event.actor_display;
+    
+    if (!actorDisplay && actorId !== 'system') {
+      const userDetails = await getUserDetails(actorId);
+      if (userDetails && userDetails.name) {
+        actorDisplay = userDetails.name;
+      } else if (userDetails && userDetails.fullName) {
+        actorDisplay = userDetails.fullName;
+      } else if (userDetails && userDetails.email) {
+        actorDisplay = userDetails.email;
+      }
+    }
+    
+    // Fallback for actor display
+    if (!actorDisplay) {
+      actorDisplay = req?.user?.user_id || 'System';
+    }
+
     const sql = `INSERT INTO activity_logs (
-      orgid,
+      orgid, org_name,
       module, category, severity, outcome,
       actor_type, actor_id, actor_display,
       event_type, event_label,
@@ -124,25 +155,26 @@ async function logActivity(event, req) {
       request_id, correlation_id,
       metadata, changes
     ) VALUES (
-      $1,
-      $2, $3, $4, $5,
-      $6, $7, $8,
-      $9, $10,
-      $11, $12, $13,
-      $14, $15, $16,
-      $17, $18,
-      $19, $20
+      $1, $2,
+      $3, $4, $5, $6,
+      $7, $8, $9,
+      $10, $11,
+      $12, $13, $14,
+      $15, $16, $17,
+      $18, $19,
+      $20, $21
     )`;
 
     const values = [
-      req?.orgid || 'unknown',  // orgid from middleware
+      orgUuid,
+      orgName,
       event.module,
       event.category,
       event.severity || 'info',
       event.outcome || 'success',
       event.actor_type || 'user',
-      event.actor_id || req?.user?.user_id || 'system',
-      event.actor_display || req?.user?.user_id || 'System',
+      actorId,
+      actorDisplay,
       event.event_type,
       event.event_label,
       event.target_type || null,
