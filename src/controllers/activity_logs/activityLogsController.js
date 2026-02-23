@@ -259,7 +259,7 @@ async function queryActivityLogs(req, res, next) {
     // Fetch page
     const dataQuery = `
       SELECT
-        event_id, timestamp, orgid,
+        event_id, timestamp, orgid, org_name,
         module, category, severity, outcome,
         actor_type, actor_id, actor_display,
         event_type, event_label,
