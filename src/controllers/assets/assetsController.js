@@ -1,6 +1,6 @@
 const db = require('../../db');
 const { logActivity } = require('../../utils/activityLogger');
-const { uploadFile, deleteFile } = require('../../utils/storage');
+const { uploadFile, deleteFile, generateQrCode } = require('../../utils/storage');
 
 /**
  * Create a new asset
@@ -47,10 +47,22 @@ async function createAsset(req, res, next) {
     
     const result = await db.query(sql, values);
     const assetId = result.rows[0].uuid;
-    
+
+    // Generate QR code encoding the asset UUID, upload to Firebase Storage
+    const qrCodeUrl = await generateQrCode(assetId);
+    if (qrCodeUrl) {
+      const qrGeneratedAt = new Date().toISOString();
+      await db.query(
+        'UPDATE assets SET qr_code_url = $1, qr_code_generated_at = $2 WHERE uuid = $3',
+        [qrCodeUrl, qrGeneratedAt, assetId]
+      );
+      result.rows[0].qr_code_url = qrCodeUrl;
+      result.rows[0].qr_code_generated_at = qrGeneratedAt;
+    }
+
     // Handle optional document upload - upload with actual UUID, then update row
     if (req.file) {
-      const documentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'assets', assetId, req.file.mimetype);
+      const documentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'assets/documents', assetId, req.file.mimetype);
       if (documentUrl) {
         await db.query('UPDATE assets SET document_url = $1 WHERE uuid = $2', [documentUrl, assetId]);
         result.rows[0].document_url = documentUrl;
@@ -150,7 +162,7 @@ async function updateAsset(req, res, next) {
         await deleteFile(row.document_url);
       }
       // Upload new document with asset UUID
-      const newDocumentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'assets', id, req.file.mimetype);
+      const newDocumentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'assets/documents', id, req.file.mimetype);
       if (newDocumentUrl) {
         payload.document_url = newDocumentUrl;
       }
@@ -196,9 +208,12 @@ async function deleteAsset(req, res, next) {
     if (!row) return res.status(404).json({ error: 'Asset not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'Organization mismatch' });
     
-    // Delete document from storage if exists
+    // Delete document and QR code from storage if they exist
     if (row.document_url) {
       await deleteFile(row.document_url);
+    }
+    if (row.qr_code_url) {
+      await deleteFile(row.qr_code_url);
     }
     
     // Delete asset

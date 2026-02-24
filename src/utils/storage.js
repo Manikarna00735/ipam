@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
+const QRCode = require('qrcode');
 
 let bucket = null;
 let initError = null;
@@ -61,7 +62,7 @@ async function uploadFile(fileBuffer, fileName, module, id, mimeType = 'applicat
       console.warn('[Storage] Firebase not available, skipping file upload');
       return null;
     }
-    
+
     const timestamp = Date.now();
     const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storagePath = `${module}/${id}/${timestamp}_${sanitizedFileName}`;
@@ -177,10 +178,53 @@ async function replaceFile(fileBuffer, fileName, oldFileUrl, module, id) {
   }
 }
 
+/**
+ * Generate a QR code for an asset UUID and upload it to Firebase Storage
+ * @param {string} assetUuid - The asset UUID to encode in the QR
+ * @returns {Promise<string>} Public URL of the QR code image or null
+ */
+async function generateQrCode(assetUuid) {
+  try {
+    if (!ensureInitialized()) {
+      console.warn('[Storage] Firebase not available, skipping QR code generation');
+      return null;
+    }
+
+    // Generate QR code as PNG buffer encoding the asset UUID
+    const qrBuffer = await QRCode.toBuffer(assetUuid, {
+      type: 'png',
+      width: 300,
+      margin: 2,
+      errorCorrectionLevel: 'M'
+    });
+
+    const storagePath = `assets/qr/${assetUuid}/qr_code.png`;
+    const file = bucket.file(storagePath);
+
+    await file.save(qrBuffer, {
+      metadata: {
+        contentType: 'image/png',
+        metadata: {
+          assetUuid,
+          generatedAt: new Date().toISOString()
+        }
+      }
+    });
+
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+    console.log(`[Storage] QR code generated for asset: ${assetUuid}`);
+    return publicUrl;
+  } catch (err) {
+    console.error('[Storage] QR code generation failed:', err.message);
+    return null;
+  }
+}
+
 module.exports = {
   ensureInitialized,
   uploadFile,
   deleteFile,
   getFileMetadata,
-  replaceFile
+  replaceFile,
+  generateQrCode
 };

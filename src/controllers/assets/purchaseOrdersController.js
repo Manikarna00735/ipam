@@ -1,6 +1,6 @@
 const db = require('../../db');
 const { logActivity, getTargetDisplay } = require('../../utils/activityLogger');
-const { uploadFile, deleteFile } = require('../../utils/storage');
+const { uploadFile, deleteFile, generateQrCode } = require('../../utils/storage');
 
 // mandatory fields: po_id, vendor_uuid, site_uuid, quantity, unit_cost
 // Optional: pdf_file (multipart form data)
@@ -141,23 +141,22 @@ async function updatePurchaseOrder(req, res, next) {
       if (assetsToCreate > 0) {
         // Generate base asset_id from PO id
         const baseAssetId = row.po_id.replace(/-/g, '_');
-        
-        // Build all asset values for bulk insert
+
+        // Build all asset values for bulk insert (qr_code_url set after generation)
         let assetValues = [];
         let placeholderIndex = 1;
         let valueSets = [];
-        
+
         for (let i = 0; i < assetsToCreate; i++) {
           const assetId = `${baseAssetId}_${i + 1}`;
-          const qrCodeUrl = `${process.env.QR_CODE_BASE_URL || 'https://qr.company.com'}/${assetId}`;
-          
+
           valueSets.push(
             `($${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, ` +
             `$${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, ` +
-            `$${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, ` +
+            `$${placeholderIndex++}, $${placeholderIndex++}, $${placeholderIndex++}, ` +
             `current_timestamp, $${placeholderIndex++}, $${placeholderIndex++}, current_timestamp)`
           );
-          
+
           assetValues.push(
             assetId,
             row.category || null,
@@ -170,20 +169,36 @@ async function updatePurchaseOrder(req, res, next) {
             row.purchase_date || null,
             row.warranty_expiry || null,
             row.unit_cost || null,
-            qrCodeUrl,
             req.orgid,
             req.user ? req.user.user_id : null
           );
         }
-        
-        // Single bulk insert statement
+
+        // Bulk insert and get UUIDs of created assets
         const bulkInsertSql = `INSERT INTO assets (
           asset_id, category, manufacturer_uuid, model, department, site_uuid, status,
           purchase_order_uuid, purchase_date, warranty_expiry, purchase_cost,
-          qr_code_url, qr_code_generated_at, orgid, user_id, updatedat
-        ) VALUES ${valueSets.join(', ')}`;
-        
-        await db.query(bulkInsertSql, assetValues);
+          qr_code_generated_at, orgid, user_id, updatedat
+        ) VALUES ${valueSets.join(', ')} RETURNING uuid`;
+
+        const insertResult = await db.query(bulkInsertSql, assetValues);
+        const insertedUuids = insertResult.rows.map(r => r.uuid);
+
+        // Generate QR codes in parallel for all inserted assets
+        const qrUrls = await Promise.all(insertedUuids.map(uuid => generateQrCode(uuid)));
+
+        // Update qr_code_url for each asset
+        const now = new Date().toISOString();
+        await Promise.all(
+          insertedUuids.map((uuid, i) =>
+            qrUrls[i]
+              ? db.query(
+                  'UPDATE assets SET qr_code_url = $1, qr_code_generated_at = $2 WHERE uuid = $3',
+                  [qrUrls[i], now, uuid]
+                )
+              : null
+          ).filter(Boolean)
+        );
         
         // Log asset auto-creation
         await logActivity({
