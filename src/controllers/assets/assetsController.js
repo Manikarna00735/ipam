@@ -1,13 +1,16 @@
 const db = require('../../db');
 const { logActivity } = require('../../utils/activityLogger');
+const { uploadFile, deleteFile } = require('../../utils/storage');
 
 /**
  * Create a new asset
  * Required: asset_id, category, site_uuid, status, qr_code_url
+ * Optional: pdf_file (multipart form data)
  */
 async function createAsset(req, res, next) {
   try {
     const payload = req.body || {};
+    
     const sql = `INSERT INTO assets (
       asset_id, category, manufacturer_uuid, model, serial_no, department,
       site_uuid, status, assigned_to, cost_center, purchase_order_uuid,
@@ -43,6 +46,16 @@ async function createAsset(req, res, next) {
     ];
     
     const result = await db.query(sql, values);
+    const assetId = result.rows[0].uuid;
+    
+    // Handle optional document upload - upload with actual UUID, then update row
+    if (req.file) {
+      const documentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'assets', assetId, req.file.mimetype);
+      if (documentUrl) {
+        await db.query('UPDATE assets SET document_url = $1 WHERE uuid = $2', [documentUrl, assetId]);
+        result.rows[0].document_url = documentUrl;
+      }
+    }
     
     // Log Asset creation
     await logActivity({
@@ -51,8 +64,11 @@ async function createAsset(req, res, next) {
       event_type: 'ASSET_CREATED',
       event_label: 'Asset Created',
       target_type: 'asset',
-      target_id: result.rows[0].uuid,
-      target_display: result.rows[0].asset_id
+      target_id: assetId,
+      target_display: result.rows[0].asset_id,
+      metadata: {
+        has_document: !!result.rows[0].document_url
+      }
     }, req);
     
     res.status(201).json(result.rows[0]);
@@ -69,7 +85,7 @@ async function listAssets(req, res, next) {
         a.uuid, a.asset_id, a.category, a.model, a.serial_no, a.department,
         a.site_uuid, a.status, a.assigned_to, a.cost_center,
         a.purchase_date, a.warranty_expiry, a.expected_eol, a.purchase_cost,
-        a.depreciation_method, a.depreciation_rate_pct, a.qr_code_url,
+        a.depreciation_method, a.depreciation_rate_pct, a.qr_code_url, a.document_url,
         a.qr_code_generated_at, a.createdat, a.updatedat, a.user_id,
         jsonb_build_object('name', s.name, 'uuid', s.uuid) as site,
         jsonb_build_object('name', m.name, 'uuid', m.uuid) as manufacturer,
@@ -96,7 +112,7 @@ async function getAsset(req, res, next) {
         a.uuid, a.asset_id, a.category, a.model, a.serial_no, a.department,
         a.site_uuid, a.status, a.assigned_to, a.cost_center,
         a.purchase_date, a.warranty_expiry, a.expected_eol, a.purchase_cost,
-        a.depreciation_method, a.depreciation_rate_pct, a.qr_code_url,
+        a.depreciation_method, a.depreciation_rate_pct, a.qr_code_url, a.document_url,
         a.qr_code_generated_at, a.createdat, a.updatedat, a.user_id,
         jsonb_build_object('name', s.name, 'uuid', s.uuid) as site,
         jsonb_build_object('name', m.name, 'uuid', m.uuid) as manufacturer,
@@ -114,6 +130,7 @@ async function getAsset(req, res, next) {
 
 /**
  * Update an asset
+ * Optional: pdf_file (multipart form data) to replace existing PDF
  */
 async function updateAsset(req, res, next) {
   try {
@@ -125,6 +142,19 @@ async function updateAsset(req, res, next) {
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'Asset not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'Organization mismatch' });
+    
+    // Handle document replacement if new file provided
+    if (req.file) {
+      // Delete old document if exists
+      if (row.document_url) {
+        await deleteFile(row.document_url);
+      }
+      // Upload new document with asset UUID
+      const newDocumentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'assets', id, req.file.mimetype);
+      if (newDocumentUrl) {
+        payload.document_url = newDocumentUrl;
+      }
+    }
     
     // Build dynamic UPDATE query
     const setClauses = Object.keys(payload).map((k, i) => `${k}=$${i + 1}`).join(', ');
@@ -165,6 +195,11 @@ async function deleteAsset(req, res, next) {
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'Asset not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'Organization mismatch' });
+    
+    // Delete document from storage if exists
+    if (row.document_url) {
+      await deleteFile(row.document_url);
+    }
     
     // Delete asset
     await db.query('DELETE FROM assets WHERE uuid = $1', [id]);

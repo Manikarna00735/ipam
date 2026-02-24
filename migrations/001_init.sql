@@ -439,6 +439,8 @@ CREATE TABLE purchase_orders (
     warranty_expiry DATE,
     -- Receiving tracking (for V1)
     quantity_received INT NOT NULL DEFAULT 0 CHECK (quantity_received >= 0),
+    -- Documents
+    document_url TEXT,
   	orgid varchar(128),
 	createdat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
 	updatedat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -569,6 +571,8 @@ CREATE TABLE assets (
     depreciation_rate_pct NUMERIC(5,2),
     qr_code_url TEXT NOT NULL,
     qr_code_generated_at TIMESTAMP NOT NULL DEFAULT now(),
+    -- Documents
+    document_url TEXT,
   	orgid varchar(128),
 	createdat  TIMESTAMP WITH TIME ZONE DEFAULT now(),
 	updatedat  TIMESTAMP WITH TIME ZONE DEFAULT now(),

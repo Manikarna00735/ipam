@@ -1,11 +1,14 @@
 const db = require('../../db');
 const { logActivity, getTargetDisplay } = require('../../utils/activityLogger');
+const { uploadFile, deleteFile } = require('../../utils/storage');
 
 // mandatory fields: po_id, vendor_uuid, site_uuid, quantity, unit_cost
+// Optional: pdf_file (multipart form data)
 // Note: total_value is a GENERATED column (quantity * unit_cost) — never insert/update it directly
 async function createPurchaseOrder(req, res, next) {
   try {
     const payload = req.body || {};
+    
     const sql = `INSERT INTO purchase_orders (po_id, vendor_uuid, department, site_uuid,
       owner_requester_id, status, category, manufacturer_uuid, model, quantity, unit_cost,
       purchase_date, warranty_expiry, quantity_received, orgid, user_id, updatedat)
@@ -29,6 +32,16 @@ async function createPurchaseOrder(req, res, next) {
       req.user ? req.user.user_id : null,
     ];
     const result = await db.query(sql, values);
+    const poId = result.rows[0].uuid;
+    
+    // Handle optional document upload - upload with actual UUID, then update row
+    if (req.file) {
+      const documentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'purchase_orders', poId, req.file.mimetype);
+      if (documentUrl) {
+        await db.query('UPDATE purchase_orders SET document_url = $1 WHERE uuid = $2', [documentUrl, poId]);
+        result.rows[0].document_url = documentUrl;
+      }
+    }
     
     // Log Purchase Order creation
     await logActivity({
@@ -37,8 +50,11 @@ async function createPurchaseOrder(req, res, next) {
       event_type: 'PO_CREATED',
       event_label: 'Purchase Order Created',
       target_type: 'purchase_order',
-      target_id: result.rows[0].uuid,
-      target_display: result.rows[0].po_id
+      target_id: poId,
+      target_display: result.rows[0].po_id,
+      metadata: {
+        has_document: !!result.rows[0].document_url
+      }
     }, req);
     
     res.status(201).json(result.rows[0]);
@@ -50,7 +66,7 @@ async function listPurchaseOrders(req, res, next) {
     const rows = (await db.query(
       `SELECT po.uuid, po.po_id, po.department, po.owner_requester_id, po.status,
         po.category, po.model, po.quantity, po.unit_cost, po.total_value,
-        po.purchase_date, po.warranty_expiry, po.quantity_received,
+        po.purchase_date, po.warranty_expiry, po.quantity_received, po.document_url,
         po.orgid, po.createdat, po.updatedat, po.user_id,
         jsonb_build_object('name', v.name, 'uuid', v.uuid) as vendor_uuid,
         jsonb_build_object('name', s.name, 'uuid', s.uuid) as site_uuid,
@@ -71,7 +87,7 @@ async function getPurchaseOrder(req, res, next) {
     const rows = (await db.query(
       `SELECT po.uuid, po.po_id, po.department, po.owner_requester_id, po.status,
         po.category, po.model, po.quantity, po.unit_cost, po.total_value,
-        po.purchase_date, po.warranty_expiry, po.quantity_received,
+        po.purchase_date, po.warranty_expiry, po.quantity_received, po.pdf_url,
         po.orgid, po.createdat, po.updatedat, po.user_id,
         jsonb_build_object('name', v.name, 'uuid', v.uuid) as vendor_uuid,
         jsonb_build_object('name', s.name, 'uuid', s.uuid) as site_uuid,
@@ -96,6 +112,20 @@ async function updatePurchaseOrder(req, res, next) {
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     // total_value is a GENERATED ALWAYS column — must not be included in SET clause
     delete payload.total_value;
+    
+    // Handle document replacement if new file provided
+    if (req.file) {
+      // Delete old document if exists
+      if (row.document_url) {
+        await deleteFile(row.document_url);
+      }
+      // Upload new document with PO UUID
+      const newDocumentUrl = await uploadFile(req.file.buffer, req.file.originalname, 'purchase_orders', id, req.file.mimetype);
+      if (newDocumentUrl) {
+        payload.document_url = newDocumentUrl;
+      }
+    }
+    
     const setClauses = Object.keys(payload).map((k, i) => `${k}=$${i + 1}`).join(', ');
     const values = Object.values(payload);
     const sql = `UPDATE purchase_orders SET ${setClauses}, updatedat = current_timestamp, user_id = $${values.length + 1} WHERE uuid = $${values.length + 2} RETURNING *`;
@@ -197,6 +227,12 @@ async function deletePurchaseOrder(req, res, next) {
     const getRes = await db.query('SELECT * FROM purchase_orders WHERE uuid = $1', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
+    
+    // Delete document from storage if exists
+    if (row.document_url) {
+      await deleteFile(row.document_url);
+    }
+    
     await db.query('DELETE FROM purchase_orders WHERE uuid = $1', [id]);
     
     // Log Purchase Order deletion

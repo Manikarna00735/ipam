@@ -1263,6 +1263,7 @@
         },
         {
           "name": "Create Purchase Order",
+          "description": "Create a purchase order. Optional: attach a document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT - max 10MB). Use 'Create Purchase Order with Document' endpoint below if uploading a file.",
           "request": {
             "method": "POST",
             "header": [
@@ -1273,6 +1274,39 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"po_id\": \"PO-001-NYC-00001\",\n  \"vendor_uuid\": \"<vendor-uuid>\",\n  \"site_uuid\": \"<site-uuid>\",\n  \"quantity\": 10,\n  \"unit_cost\": 1500.00,\n  \"status\": \"DRAFT\",\n  \"department\": \"IT Infrastructure\",\n  \"category\": \"Network Hardware\",\n  \"manufacturer_uuid\": \"<manufacturer-uuid>\",\n  \"model\": \"Catalyst 9300\",\n  \"purchase_date\": \"2025-03-01\",\n  \"warranty_expiry\": \"2028-03-01\",\n  \"quantity_received\": 0,\n  \"owner_requester_id\": \"<user-id>\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/assets/po", "host": ["{{baseUrl}}"], "path": ["api", "assets", "po"] }
+          }
+        },
+        {
+          "name": "Create Purchase Order with Document",
+          "description": "Create a purchase order with document attachment (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT - max 10MB). File is uploaded to Firebase Storage and document_url is returned in response.",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "multipart/form-data" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "po_id", "value": "PO-001-NYC-00002", "type": "text" },
+                { "key": "vendor_uuid", "value": "<vendor-uuid>", "type": "text" },
+                { "key": "site_uuid", "value": "<site-uuid>", "type": "text" },
+                { "key": "quantity", "value": "10", "type": "text" },
+                { "key": "unit_cost", "value": "1500.00", "type": "text" },
+                { "key": "status", "value": "DRAFT", "type": "text" },
+                { "key": "department", "value": "IT Infrastructure", "type": "text" },
+                { "key": "category", "value": "Network Hardware", "type": "text" },
+                { "key": "manufacturer_uuid", "value": "<manufacturer-uuid>", "type": "text" },
+                { "key": "model", "value": "Catalyst 9300", "type": "text" },
+                { "key": "purchase_date", "value": "2025-03-01", "type": "text" },
+                { "key": "warranty_expiry", "value": "2028-03-01", "type": "text" },
+                { "key": "quantity_received", "value": "0", "type": "text" },
+                { "key": "owner_requester_id", "value": "<user-id>", "type": "text" },
+                { "key": "document_file", "value": "@/path/to/document.pdf", "type": "file", "description": "Optional: Attach any document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT)" }
+              ]
             },
             "url": { "raw": "{{baseUrl}}/api/assets/po", "host": ["{{baseUrl}}"], "path": ["api", "assets", "po"] }
           }
@@ -1295,6 +1329,7 @@
         },
         {
           "name": "Update Purchase Order",
+          "description": "Update a purchase order. Use 'Update Purchase Order with Document' endpoint below if modifying or uploading a document.",
           "request": {
             "method": "PUT",
             "header": [
@@ -1305,6 +1340,32 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"APPROVED\",\n  \"quantity_received\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/po/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "po", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Purchase Order UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Purchase Order with Document",
+          "description": "Update a purchase order and attach/replace a document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT - max 10MB). If a document already exists, it will be deleted and replaced with the new one.",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "multipart/form-data" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "status", "value": "RECEIVED", "type": "text" },
+                { "key": "quantity_received", "value": "10", "type": "text" },
+                { "key": "document_file", "value": "@/path/to/receipt.pdf", "type": "file", "description": "Optional: Replace existing document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT)" }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/assets/po/:id",
@@ -1349,6 +1410,7 @@
         },
         {
           "name": "Create Asset",
+          "description": "Create an asset. Optional: attach a document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT - max 10MB). Use 'Create Asset with Document' endpoint below if uploading a file.",
           "request": {
             "method": "POST",
             "header": [
@@ -1359,6 +1421,43 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"asset_id\": \"SRV-DC-001\",\n  \"category\": \"Server\",\n  \"manufacturer_uuid\": \"mfr-uuid-123\",\n  \"model\": \"Dell PowerEdge R750\",\n  \"serial_no\": \"ABC123456789\",\n  \"department\": \"Infrastructure\",\n  \"site_uuid\": \"site-uuid-123\",\n  \"status\": \"Active\",\n  \"assigned_to\": \"john.smith@company.com\",\n  \"cost_center\": \"IT-001\",\n  \"purchase_order_uuid\": \"po-uuid-123\",\n  \"purchase_date\": \"2024-06-15\",\n  \"warranty_expiry\": \"2027-06-15\",\n  \"expected_eol\": \"2030-06-15\",\n  \"purchase_cost\": 8500.00,\n  \"depreciation_method\": \"Straight-line\",\n  \"depreciation_rate_pct\": 20.00,\n  \"qr_code_url\": \"https://qr.company.com/SRV-DC-001\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/assets", "host": ["{{baseUrl}}"], "path": ["api", "assets"] }
+          }
+        },
+        {
+          "name": "Create Asset with Document",
+          "description": "Create an asset with document attachment (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT - max 10MB). File is uploaded to Firebase Storage and document_url is returned in response.",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "multipart/form-data" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "asset_id", "value": "SRV-DC-002", "type": "text" },
+                { "key": "category", "value": "Server", "type": "text" },
+                { "key": "manufacturer_uuid", "value": "mfr-uuid-123", "type": "text" },
+                { "key": "model", "value": "Dell PowerEdge R750", "type": "text" },
+                { "key": "serial_no", "value": "XYZ987654321", "type": "text" },
+                { "key": "department", "value": "Infrastructure", "type": "text" },
+                { "key": "site_uuid", "value": "site-uuid-123", "type": "text" },
+                { "key": "status", "value": "Active", "type": "text" },
+                { "key": "assigned_to", "value": "john.smith@company.com", "type": "text" },
+                { "key": "cost_center", "value": "IT-001", "type": "text" },
+                { "key": "purchase_order_uuid", "value": "po-uuid-123", "type": "text" },
+                { "key": "purchase_date", "value": "2024-06-15", "type": "text" },
+                { "key": "warranty_expiry", "value": "2027-06-15", "type": "text" },
+                { "key": "expected_eol", "value": "2030-06-15", "type": "text" },
+                { "key": "purchase_cost", "value": "8500.00", "type": "text" },
+                { "key": "depreciation_method", "value": "Straight-line", "type": "text" },
+                { "key": "depreciation_rate_pct", "value": "20.00", "type": "text" },
+                { "key": "qr_code_url", "value": "https://qr.company.com/SRV-DC-002", "type": "text" },
+                { "key": "document_file", "value": "@/path/to/warranty.pdf", "type": "file", "description": "Optional: Attach any document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT)" }
+              ]
             },
             "url": { "raw": "{{baseUrl}}/api/assets", "host": ["{{baseUrl}}"], "path": ["api", "assets"] }
           }
@@ -1381,6 +1480,7 @@
         },
         {
           "name": "Update Asset",
+          "description": "Update an asset. Use 'Update Asset with Document' endpoint below if modifying or uploading a document.",
           "request": {
             "method": "PUT",
             "header": [
@@ -1391,6 +1491,33 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"Maintenance\",\n  \"assigned_to\": \"jane.doe@company.com\",\n  \"warranty_expiry\": \"2027-06-15\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", ":id"],
+              "variable": [{ "key": "id", "value": "", "description": "Asset UUID" }]
+            }
+          }
+        },
+        {
+          "name": "Update Asset with Document",
+          "description": "Update an asset and attach/replace a document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT - max 10MB). If a document already exists, it will be deleted and replaced with the new one.",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" },
+              { "key": "Content-Type", "value": "multipart/form-data" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "status", "value": "Active", "type": "text" },
+                { "key": "assigned_to", "value": "jane.doe@company.com", "type": "text" },
+                { "key": "warranty_expiry", "value": "2027-12-31", "type": "text" },
+                { "key": "document_file", "value": "@/path/to/warranty_update.pdf", "type": "file", "description": "Optional: Replace existing document (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT)" }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/assets/:id",
