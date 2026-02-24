@@ -42,7 +42,6 @@ router.post(
     category: 'string',
     site_uuid: 'uuid',
     status: 'string',
-    qr_code_url: 'string'
   }),
   assets.createAsset
 );
