@@ -87,7 +87,7 @@ async function getPurchaseOrder(req, res, next) {
     const rows = (await db.query(
       `SELECT po.uuid, po.po_id, po.department, po.owner_requester_id, po.status,
         po.category, po.model, po.quantity, po.unit_cost, po.total_value,
-        po.purchase_date, po.warranty_expiry, po.quantity_received, po.pdf_url,
+        po.purchase_date, po.warranty_expiry, po.quantity_received, po.document_url,
         po.orgid, po.createdat, po.updatedat, po.user_id,
         jsonb_build_object('name', v.name, 'uuid', v.uuid) as vendor_uuid,
         jsonb_build_object('name', s.name, 'uuid', s.uuid) as site_uuid,

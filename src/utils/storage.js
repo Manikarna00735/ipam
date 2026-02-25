@@ -1,14 +1,13 @@
 const admin = require('firebase-admin');
-const fs = require('fs');
-const path = require('path');
 const QRCode = require('qrcode');
+const firebaseAdmin = require('./firebaseAdmin');
 
 let bucket = null;
 let initError = null;
 
 /**
- * Initialize Firebase Storage
- * Abstracted storage layer - can be swapped with Azure Blob Storage in future
+ * Ensure Firebase Storage bucket is ready.
+ * Delegates Firebase Admin SDK initialization to firebaseAdmin.js.
  */
 function ensureInitialized() {
   if (bucket) return true;
@@ -16,28 +15,9 @@ function ensureInitialized() {
     console.warn('[Storage] Firebase not available:', initError);
     return false;
   }
-  
+
   try {
-    const renderPath = path.join(process.cwd(), 'firebase-service-account.json');
-    const localPath = path.join(__dirname, '../../firebase-service-account.json');
-    
-    // Determine which path to use
-    const finalPath = fs.existsSync(renderPath) ? renderPath : localPath;
-    // const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json';
-    
-    if (!fs.existsSync(finalPath)) {
-      throw new Error(`Service account file not found at ${finalPath}`);
-    }
-    
-    // Initialize if not already done
-    if (!admin.apps.length) {
-      const serviceAccount = JSON.parse(fs.readFileSync(finalPath, 'utf8'));
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET
-      });
-    }
-    
+    firebaseAdmin.ensureInitialized();
     bucket = admin.storage().bucket();
     console.log('[Storage] Firebase Storage initialized successfully');
     return true;

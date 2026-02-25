@@ -4,7 +4,7 @@ const { uploadFile, deleteFile, generateQrCode } = require('../../utils/storage'
 
 /**
  * Create a new asset
- * Required: asset_id, category, site_uuid, status, qr_code_url
+ * Required: asset_id, category, site_uuid, status
  * Optional: pdf_file (multipart form data)
  */
 async function createAsset(req, res, next) {

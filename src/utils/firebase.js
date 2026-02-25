@@ -1,6 +1,5 @@
 const admin = require('firebase-admin');
-const path = require('path');
-const fs = require('fs');
+const firebaseAdmin = require('./firebaseAdmin');
 
 /**
  * Firestore Utility Module
@@ -18,39 +17,9 @@ let initError = null;
 
 function initializeFirebase() {
   try {
-    if (!admin.apps.length) {
-      // Load service account key from environment or file
-    //   const serviceAccountPath = path.join(__dirname, '../../firebase-service-account.json');
-        const renderPath = path.join(process.cwd(), 'firebase-service-account.json');
-        const localPath = path.join(__dirname, '../../firebase-service-account.json');
-
-// Determine which path to use
-        const finalPath = fs.existsSync(renderPath) ? renderPath : localPath;
-      // Check if file exists
-      if (!fs.existsSync(finalPath)) {
-        const errMsg = `Firebase service account file not found at: ${finalPath}\n` +
-          `Please:\n` +
-          `1. Download your service account JSON from Firebase Console\n` +
-          `2. Save it as: firebase-service-account.json in your project root\n` +
-          `3. Or set FIREBASE_SERVICE_ACCOUNT_PATH environment variable`;
-        
-        initError = new Error(errMsg);
-        console.error('[Firestore]', errMsg);
-        return null;
-      }
-
-      const serviceAccount = require(finalPath);
-
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.project_id
-      });
-
-      db = admin.firestore();
-      console.log('[Firestore] Initialized successfully');
-    } else {
-      db = admin.firestore();
-    }
+    firebaseAdmin.ensureInitialized();
+    db = admin.firestore();
+    console.log('[Firestore] Initialized successfully');
     return db;
   } catch (err) {
     initError = err;
