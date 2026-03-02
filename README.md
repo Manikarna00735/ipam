@@ -67,10 +67,4 @@ See the source for exact request/response shapes in the controllers under `src/c
 
 The app exposes a Socket.IO server. Clients can connect to receive events like `prefixes:created`, `subnets:updated`, `ips:deleted`, etc. Events are emitted globally; payloads include created/updated rows or `{ id, org_id }` on deletes.
 
-**Notes & Next steps**
-
-- Run `node scripts/runMigrations.js` to apply the SQL in `migrations/` (requires `psql` and `DATABASE_URL`).
-- The project includes basic input validation and integration tests in `tests/` as examples — expand tests for other modules as needed.
-- Review `migrations/002_resources.sql` to tune schema, constraints, and indexes for production workloads.
-
 If you want, I can (A) add more API docs per-resource, (B) add OpenAPI spec, or (C) refine migrations for production. Tell me which.
