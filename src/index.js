@@ -24,6 +24,8 @@ const contracts = require('./routes/assets/contracts');
 const purchaseOrders = require('./routes/assets/purchaseOrders');
 const assets = require('./routes/assets/assets');
 const activityLogs = require('./routes/activity_logs');
+const dashboard = require('./routes/ipam/dashboard');
+const assetsDashboard = require('./routes/assets/dashboard');
 
 const app = express();
 app.use(cors());
@@ -51,7 +53,9 @@ app.use('/api/ipam', ipamRoutes);
   app.use('/api/ipam/vlans', vlans);
   app.use('/api/ipam/interfaces', interfaces);
   app.use('/api/ipam/common', commonModule);
+  app.use('/api/ipam/dashboard', dashboard);
   // Assets Management
+  app.use('/api/assets/dashboard', assetsDashboard);
   app.use('/api/assets/vendors', vendors);        // /api/assets/vendors (CRUD)
   app.use('/api/assets/contracts', contracts);    // /api/assets/contracts (CRUD)
   app.use('/api/assets/po', purchaseOrders);      // /api/assets/po (CRUD)

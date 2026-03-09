@@ -1078,6 +1078,28 @@
       ]
     },
     {
+      "name": "IPAM Dashboard",
+      "description": "Dashboard summary endpoint for the IPAM module. Returns KPIs, trends, breakdowns, IP activity, sites summary, and prefix health — all scoped by X-Org-Id.",
+      "item": [
+        {
+          "name": "Get IPAM Dashboard Summary",
+          "description": "Returns: kpis (prefixes, subnets, public_ips, private_ips, devices, racks, vlans, vrfs, sites, ip_addresses, utilization_pct), trends (% change vs 30 days ago), vlans_by_status, vrfs_by_status, ip_activity_7d (last 7 days), sites_summary (per-site aggregates), prefix_health (top 10 prefixes by usage).",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ipam/dashboard/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ipam", "dashboard", "summary"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Vendors",
       "item": [
         {
@@ -1540,6 +1562,28 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "assets", ":id"],
               "variable": [{ "key": "id", "value": "", "description": "Asset UUID" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assets Dashboard",
+      "description": "Dashboard summary endpoint for the Assets module. Returns KPIs, trends, breakdowns, activity, spend analysis, top vendors, and sites summary — all scoped by X-Org-Id.",
+      "item": [
+        {
+          "name": "Get Assets Dashboard Summary",
+          "description": "Returns: kpis (total_assets, total_pos, total_vendors, total_contracts, total_asset_value, total_po_value, total_contract_value, warranty_expiring_30d, eol_upcoming_90d), trends (% change vs 30 days ago), assets_by_status, assets_by_category, pos_by_status, contracts_by_status, asset_activity_7d (last 7 days created), spend_by_category, top_vendors (top 10 by PO value), sites_summary.",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "X-Org-Id", "value": "{{orgId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/dashboard/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "dashboard", "summary"]
             }
           }
         }
