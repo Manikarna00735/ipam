@@ -27,13 +27,58 @@ const activityLogs = require('./routes/activity_logs');
 const dashboard = require('./routes/ipam/dashboard');
 const assetsDashboard = require('./routes/assets/dashboard');
 
+const { apiLimiter, writeLimiter, logLimiter } = require('./middleware/rateLimiter');
+
 const app = express();
-app.use(cors());
+
+const allowedOrigins = [
+  'https://pagentz.web.app',
+  'https://pagentz.firebaseapp.com',
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:3000', 'http://localhost:5000', 'http://localhost:5173']
+    : []),
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no Origin header (mobile apps, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin '${origin}' not allowed`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Org-Id'],
+  credentials: true,
+}));
+
 app.use(express.json());
+
+// Rate limiting — applied per module before route handlers
+app.use('/api/ipam', apiLimiter);
+app.use('/api/assets', apiLimiter);
+app.use('/api/activity-logs', logLimiter);
+
+// Stricter limits on write operations
+app.post('/api/ipam/*', writeLimiter);
+app.put('/api/ipam/*', writeLimiter);
+app.delete('/api/ipam/*', writeLimiter);
+app.post('/api/assets/*', writeLimiter);
+app.put('/api/assets/*', writeLimiter);
+app.delete('/api/assets/*', writeLimiter);
 
 const port = process.env.PORT || 5000;
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
 realtime.setIo(io);
 
 

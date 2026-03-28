@@ -3,16 +3,18 @@ const router = express.Router();
 const { requireAuth } = require('../../middleware/auth');
 const { requireOrg } = require('../../middleware/org');
 const activityLogs = require('../../controllers/activity_logs/activityLogsController');
+const { validate } = require('../../middleware/validate');
+const schema = require('../../schemas/activityLogs');
 
 // All activity log routes require authentication and organization context
 router.use(requireAuth);
 router.use(requireOrg);
 
 // POST /api/activity-logs — Write a single log event
-router.post('/', activityLogs.createActivityLog);
+router.post('/', validate(schema.logCreate), activityLogs.createActivityLog);
 
 // POST /api/activity-logs/query — Query logs with filters
-router.post('/query', activityLogs.queryActivityLogs);
+router.post('/query', validate(schema.logQuery), activityLogs.queryActivityLogs);
 
 // ⚠️ DISABLED: The following endpoints are commented out. Uncomment if needed.
 // They are redundant with POST /query which handles listing, filtering, and getting by correlation_id

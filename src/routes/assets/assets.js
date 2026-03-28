@@ -4,7 +4,8 @@ const multer = require('multer');
 const { requireAuth } = require('../../middleware/auth');
 const { requireOrg } = require('../../middleware/org');
 const assets = require('../../controllers/assets/assetsController');
-const { requireFieldsTypes } = require('../../middleware/validators');
+const { validate } = require('../../middleware/validate');
+const schema = require('../../schemas/assets');
 
 // Configure multer for document uploads (10MB max)
 const upload = multer({
@@ -48,7 +49,7 @@ router.post(
 
 router.get('/', assets.listAssets);
 router.get('/:id', assets.getAsset);
-router.put('/:id', upload.single('document_file'), assets.updateAsset);
+router.put('/:id', upload.single('document_file'), validate(schema.assetUpdate), assets.updateAsset);
 router.delete('/:id', assets.deleteAsset);
 
 module.exports = router;

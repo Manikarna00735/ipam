@@ -3,14 +3,16 @@ const router = express.Router();
 const { requireAuth } = require('../../middleware/auth');
 const { requireOrg } = require('../../middleware/org');
 const wireless = require('../../controllers/ipam/wirelessController');
-const { requireFieldsTypes } = require('../../middleware/validators');
+const { validate } = require('../../middleware/validate');
+const schema = require('../../schemas/ipam');
 
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({ ssid: 'string', status: 'string' }), wireless.createWireless);
+router.post('/',    validate(schema.wirelessCreate), wireless.createWireless);
 router.get('/', wireless.listWireless);
 router.get('/:id', wireless.getWireless);
-router.put('/:id', wireless.updateWireless);
+router.put('/:id', validate(schema.wirelessUpdate), wireless.updateWireless);
 router.delete('/:id', wireless.deleteWireless);
+
 module.exports = router;

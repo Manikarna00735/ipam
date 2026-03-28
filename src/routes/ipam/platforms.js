@@ -3,14 +3,16 @@ const router = express.Router();
 const { requireAuth } = require('../../middleware/auth');
 const { requireOrg } = require('../../middleware/org');
 const platforms = require('../../controllers/ipam/platformsController');
-const { requireFieldsTypes } = require('../../middleware/validators');
+const { validate } = require('../../middleware/validate');
+const schema = require('../../schemas/ipam');
 
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', requireFieldsTypes({ name: 'string', slug: 'string' }), platforms.createPlatforms);
+router.post('/',    validate(schema.platformCreate), platforms.createPlatforms);
 router.get('/', platforms.listPlatforms);
 router.get('/:id', platforms.getPlatform);
-router.put('/:id', platforms.updatePlatform);
+router.put('/:id', validate(schema.platformUpdate), platforms.updatePlatform);
 router.delete('/:id', platforms.deletePlatform);
+
 module.exports = router;

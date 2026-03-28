@@ -4,7 +4,8 @@ const multer = require('multer');
 const { requireAuth } = require('../../middleware/auth');
 const { requireOrg } = require('../../middleware/org');
 const purchaseOrders = require('../../controllers/assets/purchaseOrdersController');
-const { requireFieldsTypes } = require('../../middleware/validators');
+const { validate } = require('../../middleware/validate');
+const schema = require('../../schemas/assets');
 
 // Configure multer for document uploads (10MB max)
 const upload = multer({
@@ -33,10 +34,10 @@ const upload = multer({
 router.use(requireAuth);
 router.use(requireOrg);
 
-router.post('/', upload.single('document_file'), requireFieldsTypes({ po_id: 'string', vendor_uuid: 'uuid', site_uuid: 'uuid', quantity: 'number', unit_cost: 'number' }), purchaseOrders.createPurchaseOrder);
+router.post('/', upload.single('document_file'), validate(schema.purchaseOrderCreate), purchaseOrders.createPurchaseOrder);
 router.get('/', purchaseOrders.listPurchaseOrders);
 router.get('/:id', purchaseOrders.getPurchaseOrder);
-router.put('/:id', upload.single('document_file'), purchaseOrders.updatePurchaseOrder);
+router.put('/:id', upload.single('document_file'), validate(schema.purchaseOrderUpdate), purchaseOrders.updatePurchaseOrder);
 router.delete('/:id', purchaseOrders.deletePurchaseOrder);
 
 module.exports = router;
