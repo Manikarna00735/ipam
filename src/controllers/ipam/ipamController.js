@@ -3,6 +3,7 @@ const { Address4, Address6 } = require('ip-address');
 const realtime = require('../../realtime');
 const common = require('../../common');
 const { logActivity, getTargetDisplay } = require('../../utils/activityLogger');
+const logger = require('../../utils/logger');
 
 // Helper function to check if two IP ranges overlap
 function checkRangesOverlap(range1, range2) {
@@ -343,7 +344,7 @@ async function autoGenerateIPsForSubnet(subnetId, subnetCidr, orgid, userId) {
     
     return results;
   } catch (err) {
-    console.error('Error auto-generating IPs:', err);
+    logger.error({ err: err.message }, 'Error auto-generating IPs');
     // Don't throw, just log - subnet creation should still succeed
     return [];
   }

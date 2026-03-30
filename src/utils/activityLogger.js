@@ -1,5 +1,6 @@
 const db = require('../db');
 const { getOrgDetails, getUserDetails } = require('./firebase');
+const logger = require('./logger');
 
 /**
  * Safely extract target display value with fallbacks.
@@ -192,7 +193,7 @@ async function logActivity(event, req) {
     await db.query(sql, values);
   } catch (err) {
     // Log failures should never break the main operation
-    console.error('[ActivityLog] Failed to write log:', err.message);
+    logger.error({ err: err.message }, '[ActivityLog] Failed to write log');
   }
 }
 

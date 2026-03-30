@@ -1,8 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
+const { randomUUID } = require('crypto');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const pinoHttp = require('pino-http');
+const timeout = require('connect-timeout');
+const logger = require('./utils/logger');
 const ipamRoutes = require('./routes/ipam/ipam');
 const providers = require('./routes/ipam/providers');
 const regions = require('./routes/ipam/regions');
@@ -28,6 +32,8 @@ const dashboard = require('./routes/ipam/dashboard');
 const assetsDashboard = require('./routes/assets/dashboard');
 
 const { apiLimiter, writeLimiter, logLimiter } = require('./middleware/rateLimiter');
+const errorHandler = require('./middleware/errorHandler');
+const { pool } = require('./db');
 
 const app = express();
 
@@ -52,6 +58,27 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Abort requests that take longer than 30s (Flutter client timeout is 20s)
+app.use(timeout('30s'));
+
+// HTTP request logging — skip /health to avoid noise
+// customProps runs at response time so orgId/userId are set by then (auth/org middleware ran)
+app.use(pinoHttp({
+  logger,
+  genReqId: () => randomUUID(),
+  autoLogging: { ignore: (req) => req.url === '/health' },
+  customProps: (req) => ({
+    orgId: req.orgid ?? undefined,
+    userId: req.user?.user_id ?? undefined,
+  }),
+}));
+
+// Halt timed-out requests before they reach rate limiters or route handlers
+function haltOnTimedout(req, _res, next) {
+  if (!req.timedout) next();
+}
+app.use(haltOnTimedout);
 
 // Rate limiting — applied per module before route handlers
 app.use('/api/ipam', apiLimiter);
@@ -81,6 +108,25 @@ const io = new Server(server, {
 });
 realtime.setIo(io);
 
+// Health check — unauthenticated, no rate limit; used by Render for uptime monitoring
+app.get('/health', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.status(200).json({
+      status: 'ok',
+      uptime: process.uptime(),
+      database: 'ok',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(503).json({
+      status: 'error',
+      uptime: process.uptime(),
+      database: 'unreachable',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
 // IPAM nested endpoints (prefixes/subnets/ips)
 app.use('/api/ipam', ipamRoutes);
@@ -105,32 +151,35 @@ app.use('/api/ipam', ipamRoutes);
   app.use('/api/assets/contracts', contracts);    // /api/assets/contracts (CRUD)
   app.use('/api/assets/po', purchaseOrders);      // /api/assets/po (CRUD)
   app.use('/api/assets', assets);                 // /api/assets (POST create, GET list, GET/:id, PUT/:id, DELETE/:id)
-  
+
   // Activity Logs
   app.use('/api/activity-logs', activityLogs);    // /api/activity-logs/query (filter & list)
 
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.status || 500).json({ error: err.message || 'Internal error' });
-});
-
+app.use(errorHandler);
 
 io.on('connection', (socket) => {
   const orgid = socket.handshake.query.orgid;
-  console.log('ws client connected', socket.id);
+  logger.info({ socketId: socket.id }, 'ws client connected');
 
   if (orgid) {
-    // 2. The socket "joins" a specific channel
     socket.join(`org_${orgid}`);
-    console.log(`Client ${socket.id} joined room: org_${orgid}`);
+    logger.info({ socketId: socket.id, orgid }, 'ws client joined room');
   }
 
-  socket.on('disconnect', () => console.log('ws client disconnected', socket.id));
+  socket.on('disconnect', () => logger.info({ socketId: socket.id }, 'ws client disconnected'));
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.fatal({ reason }, 'Unhandled promise rejection');
+});
+
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception — shutting down');
+  process.exit(1);
 });
 
 if (require.main === module) {
-  server.listen(port, () => console.log(`Server listening on port ${port}`));
+  server.listen(port, () => logger.info({ port }, 'Server listening'));
 }
 
 module.exports = { app, server, io };
-require('dotenv').config();

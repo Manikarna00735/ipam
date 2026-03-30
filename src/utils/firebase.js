@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const firebaseAdmin = require('./firebaseAdmin');
+const logger = require('./logger');
 
 /**
  * Firestore Utility Module
@@ -19,11 +20,11 @@ function initializeFirebase() {
   try {
     firebaseAdmin.ensureInitialized();
     db = admin.firestore();
-    console.log('[Firestore] Initialized successfully');
+    logger.info('[Firestore] Initialized successfully');
     return db;
   } catch (err) {
     initError = err;
-    console.error('[Firestore] Initialization failed:', err.message);
+    logger.error({ err: err.message }, '[Firestore] Initialization failed');
     return null;
   }
 }
@@ -33,7 +34,7 @@ function initializeFirebase() {
  */
 function ensureInitialized() {
   if (initError) {
-    console.warn('[Firestore] Firebase not properly initialized - skipping operation');
+    logger.warn('[Firestore] Firebase not properly initialized - skipping operation');
     return null;
   }
   if (!db) {
@@ -51,7 +52,7 @@ async function getOrgDetails(orgUuid) {
   try {
     const firestore = ensureInitialized();
     if (!firestore) {
-      console.warn('[Firestore] Firebase not initialized, returning null for org details');
+      logger.warn('[Firestore] Firebase not initialized, returning null for org details');
       return null;
     }
 
@@ -59,7 +60,7 @@ async function getOrgDetails(orgUuid) {
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      console.warn(`[Firestore] Organization not found: ${orgUuid}`);
+      logger.warn({ orgUuid }, '[Firestore] Organization not found');
       return null;
     }
 
@@ -68,7 +69,7 @@ async function getOrgDetails(orgUuid) {
       ...docSnap.data()
     };
   } catch (err) {
-    console.error('[Firestore] Error fetching org details:', err.message);
+    logger.error({ err: err.message }, '[Firestore] Error fetching org details');
     return null;
   }
 }
@@ -82,7 +83,7 @@ async function getUserDetails(userId) {
   try {
     const firestore = ensureInitialized();
     if (!firestore) {
-      console.warn('[Firestore] Firebase not initialized, returning null for user details');
+      logger.warn('[Firestore] Firebase not initialized, returning null for user details');
       return null;
     }
 
@@ -90,7 +91,7 @@ async function getUserDetails(userId) {
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      console.warn(`[Firestore] User not found: ${userId}`);
+      logger.warn({ userId }, '[Firestore] User not found');
       return null;
     }
 
@@ -99,7 +100,7 @@ async function getUserDetails(userId) {
       ...docSnap.data()
     };
   } catch (err) {
-    console.error('[Firestore] Error fetching user details:', err.message);
+    logger.error({ err: err.message }, '[Firestore] Error fetching user details');
     return null;
   }
 }

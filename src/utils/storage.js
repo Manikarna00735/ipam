@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const QRCode = require('qrcode');
 const firebaseAdmin = require('./firebaseAdmin');
+const logger = require('./logger');
 
 let bucket = null;
 let initError = null;
@@ -12,18 +13,18 @@ let initError = null;
 function ensureInitialized() {
   if (bucket) return true;
   if (initError) {
-    console.warn('[Storage] Firebase not available:', initError);
+    logger.warn({ err: initError }, '[Storage] Firebase not available');
     return false;
   }
 
   try {
     firebaseAdmin.ensureInitialized();
     bucket = admin.storage().bucket();
-    console.log('[Storage] Firebase Storage initialized successfully');
+    logger.info('[Storage] Firebase Storage initialized successfully');
     return true;
   } catch (err) {
     initError = err.message;
-    console.error('[Storage] Firebase initialization failed:', err.message);
+    logger.error({ err: err.message }, '[Storage] Firebase initialization failed');
     return false;
   }
 }
@@ -39,7 +40,7 @@ function ensureInitialized() {
 async function uploadFile(fileBuffer, fileName, module, id, mimeType = 'application/octet-stream') {
   try {
     if (!ensureInitialized()) {
-      console.warn('[Storage] Firebase not available, skipping file upload');
+      logger.warn('[Storage] Firebase not available, skipping file upload');
       return null;
     }
 
@@ -61,11 +62,11 @@ async function uploadFile(fileBuffer, fileName, module, id, mimeType = 'applicat
     });
     
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
-    console.log(`[Storage] File uploaded: ${storagePath}`);
-    
+    logger.info({ storagePath }, '[Storage] File uploaded');
+
     return publicUrl;
   } catch (err) {
-    console.error('[Storage] Upload failed:', err.message);
+    logger.error({ err: err.message }, '[Storage] Upload failed');
     return null;
   }
 }
@@ -78,7 +79,7 @@ async function uploadFile(fileBuffer, fileName, module, id, mimeType = 'applicat
 async function deleteFile(fileUrl) {
   try {
     if (!ensureInitialized()) {
-      console.warn('[Storage] Firebase not available, skipping file deletion');
+      logger.warn('[Storage] Firebase not available, skipping file deletion');
       return false;
     }
     
@@ -92,10 +93,10 @@ async function deleteFile(fileUrl) {
     const file = bucket.file(storagePath);
     await file.delete();
     
-    console.log(`[Storage] File deleted: ${storagePath}`);
+    logger.info({ storagePath }, '[Storage] File deleted');
     return true;
   } catch (err) {
-    console.error('[Storage] Delete failed:', err.message);
+    logger.error({ err: err.message }, '[Storage] Delete failed');
     return false;
   }
 }
@@ -108,7 +109,7 @@ async function deleteFile(fileUrl) {
 async function getFileMetadata(fileUrl) {
   try {
     if (!ensureInitialized()) {
-      console.warn('[Storage] Firebase not available');
+      logger.warn('[Storage] Firebase not available');
       return null;
     }
     
@@ -128,7 +129,7 @@ async function getFileMetadata(fileUrl) {
       timeCreated: metadata.timeCreated
     };
   } catch (err) {
-    console.error('[Storage] Get metadata failed:', err.message);
+    logger.error({ err: err.message }, '[Storage] Get metadata failed');
     return null;
   }
 }
@@ -153,7 +154,7 @@ async function replaceFile(fileBuffer, fileName, oldFileUrl, module, id) {
     const newUrl = await uploadFile(fileBuffer, fileName, module, id);
     return newUrl;
   } catch (err) {
-    console.error('[Storage] Replace file failed:', err.message);
+    logger.error({ err: err.message }, '[Storage] Replace file failed');
     return null;
   }
 }
@@ -166,7 +167,7 @@ async function replaceFile(fileBuffer, fileName, oldFileUrl, module, id) {
 async function generateQrCode(assetUuid) {
   try {
     if (!ensureInitialized()) {
-      console.warn('[Storage] Firebase not available, skipping QR code generation');
+      logger.warn('[Storage] Firebase not available, skipping QR code generation');
       return null;
     }
 
@@ -192,10 +193,10 @@ async function generateQrCode(assetUuid) {
     });
 
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
-    console.log(`[Storage] QR code generated for asset: ${assetUuid}`);
+    logger.info({ assetUuid }, '[Storage] QR code generated');
     return publicUrl;
   } catch (err) {
-    console.error('[Storage] QR code generation failed:', err.message);
+    logger.error({ err: err.message }, '[Storage] QR code generation failed');
     return null;
   }
 }

@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
+const logger = require('./logger');
 
 /**
  * Single source of truth for Firebase Admin SDK initialization.
@@ -25,9 +26,9 @@ function ensureInitialized() {
       storageBucket: process.env.FIREBASE_STORAGE_BUCKET
     });
 
-    console.log('[Firebase] Admin SDK initialized');
+    logger.info('[Firebase] Admin SDK initialized');
   } catch (err) {
-    console.error('[Firebase] Admin SDK initialization failed:', err.message);
+    logger.error({ err: err.message }, '[Firebase] Admin SDK initialization failed');
     throw err;
   }
 }
