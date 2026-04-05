@@ -35,7 +35,7 @@ async function listLocations(req, res, next) {
       jsonb_build_object('uuid', s.uuid, 'name', s.name) as site_uuid
       FROM locations l 
       left join sites s on l.site_uuid = s.uuid
-      WHERE l.orgid = $1 ORDER BY l.name`, [req.orgid])).rows;
+      WHERE l.orgid = $1 AND l.deleted_at IS NULL ORDER BY l.name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -47,7 +47,7 @@ async function getLocation(req, res, next) {
       jsonb_build_object('uuid', s.uuid, 'name', s.name) as site_uuid
       FROM locations l 
       left join sites s on l.site_uuid = s.uuid
-      WHERE l.orgid = $1 and l.uuid = $2 ORDER BY l.name`, [req.orgid, req.params.id])).rows;
+      WHERE l.orgid = $1 AND l.uuid = $2 AND l.deleted_at IS NULL ORDER BY l.name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -56,7 +56,7 @@ async function updateLocation(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM locations WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM locations WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k,i)=>`${k}=$${i+1}`).join(', ');
@@ -87,10 +87,10 @@ async function updateLocation(req, res, next) {
 async function deleteLocation(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM locations WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM locations WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM locations WHERE uuid = $1', [id]);
+    await db.query('UPDATE locations SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Location deletion
     await logActivity({

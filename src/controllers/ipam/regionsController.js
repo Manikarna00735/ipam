@@ -29,14 +29,14 @@ async function createRegions(req, res, next) {
 
 async function listRegions(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM regions WHERE orgid = $1 ORDER BY name', [req.orgid])).rows;
+    const rows = (await db.query('SELECT * FROM regions WHERE orgid = $1 AND deleted_at IS NULL ORDER BY name', [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
 
 async function getRegion(req, res, next) {
   try {
-    const rows = (await db.query('SELECT * FROM regions WHERE orgid = $1 and uuid = $2 ORDER BY name', [req.orgid, req.params.id])).rows;
+    const rows = (await db.query('SELECT * FROM regions WHERE orgid = $1 AND uuid = $2 AND deleted_at IS NULL ORDER BY name', [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -45,7 +45,7 @@ async function updateRegion(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM regions WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM regions WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k,i)=>`${k}=$${i+1}`).join(', ');
@@ -77,10 +77,10 @@ async function updateRegion(req, res, next) {
 async function deleteRegion(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM regions WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM regions WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM regions WHERE uuid = $1', [id]);
+    await db.query('UPDATE regions SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Region deletion
     await logActivity({

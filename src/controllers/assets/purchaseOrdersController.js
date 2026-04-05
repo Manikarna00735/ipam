@@ -75,7 +75,7 @@ async function listPurchaseOrders(req, res, next) {
         LEFT JOIN vendors v ON po.vendor_uuid = v.uuid
         LEFT JOIN sites s ON po.site_uuid = s.uuid
         LEFT JOIN manufacturers m ON po.manufacturer_uuid = m.uuid
-        WHERE po.orgid = $1 ORDER BY po.po_id`,
+        WHERE po.orgid = $1 AND po.deleted_at IS NULL ORDER BY po.po_id`,
       [req.orgid]
     )).rows;
     res.json({ items: rows });
@@ -96,7 +96,7 @@ async function getPurchaseOrder(req, res, next) {
         LEFT JOIN vendors v ON po.vendor_uuid = v.uuid
         LEFT JOIN sites s ON po.site_uuid = s.uuid
         LEFT JOIN manufacturers m ON po.manufacturer_uuid = m.uuid
-        WHERE po.orgid = $1 AND po.uuid = $2`,
+        WHERE po.orgid = $1 AND po.uuid = $2 AND po.deleted_at IS NULL`,
       [req.orgid, req.params.id]
     )).rows;
     res.json({ items: rows });
@@ -107,7 +107,7 @@ async function updatePurchaseOrder(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM purchase_orders WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM purchase_orders WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     // total_value is a GENERATED ALWAYS column — must not be included in SET clause
@@ -239,16 +239,11 @@ async function updatePurchaseOrder(req, res, next) {
 async function deletePurchaseOrder(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM purchase_orders WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM purchase_orders WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     
-    // Delete document from storage if exists
-    if (row.document_url) {
-      await deleteFile(row.document_url);
-    }
-    
-    await db.query('DELETE FROM purchase_orders WHERE uuid = $1', [id]);
+    await db.query('UPDATE purchase_orders SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Purchase Order deletion
     await logActivity({

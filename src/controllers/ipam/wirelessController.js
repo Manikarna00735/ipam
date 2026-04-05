@@ -38,7 +38,7 @@ async function listWireless(req, res, next) {
       jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan_uuid
       FROM wireless w
       left join vlans v on w.vlan_uuid = v.uuid
-      WHERE w.orgid = $1 ORDER BY w.ssid`, [req.orgid])).rows;
+      WHERE w.orgid = $1 AND w.deleted_at IS NULL ORDER BY w.ssid`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -51,7 +51,7 @@ async function getWireless(req, res, next) {
       jsonb_build_object('uuid', v.uuid, 'name', v.name) AS vlan_uuid
       FROM wireless w
       left join vlans v on w.vlan_uuid = v.uuid
-      WHERE w.orgid = $1 and w.uuid = $2 ORDER BY w.ssid`, [req.orgid, req.params.id])).rows;
+      WHERE w.orgid = $1 AND w.uuid = $2 AND w.deleted_at IS NULL ORDER BY w.ssid`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -60,7 +60,7 @@ async function updateWireless(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM wireless WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM wireless WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k,i)=>`"${k}"=$${i+1}`).join(', ');
@@ -91,10 +91,10 @@ async function updateWireless(req, res, next) {
 async function deleteWireless(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM wireless WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM wireless WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM wireless WHERE uuid = $1', [id]);
+    await db.query('UPDATE wireless SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Wireless deletion
     await logActivity({

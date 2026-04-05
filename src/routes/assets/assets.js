@@ -5,6 +5,7 @@ const { requireAuth } = require('../../middleware/auth');
 const { requireOrg } = require('../../middleware/org');
 const assets = require('../../controllers/assets/assetsController');
 const { validate } = require('../../middleware/validate');
+const { requireFieldsTypes } = require('../../middleware/validators');
 const schema = require('../../schemas/assets');
 
 // Configure multer for document uploads (10MB max)

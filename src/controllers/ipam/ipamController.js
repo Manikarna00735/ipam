@@ -65,7 +65,7 @@ async function createPrefix(req, res, next) {
 
     // Check if prefix already exists in the database for this org
     const existingPrefix = await db.query(
-      'SELECT * FROM networks WHERE prefix = $1 AND orgid = $2',
+      'SELECT * FROM networks WHERE prefix = $1 AND orgid = $2 AND deleted_at IS NULL',
       [p.prefix, req.orgid]
     );
     if (existingPrefix.rows.length > 0) {
@@ -74,7 +74,7 @@ async function createPrefix(req, res, next) {
 
     // Check for overlapping prefixes in the database for this org
     const allPrefixes = await db.query(
-      'SELECT prefix FROM networks WHERE orgid = $1',
+      'SELECT prefix FROM networks WHERE orgid = $1 AND deleted_at IS NULL',
       [req.orgid]
     );
     for (const existing of allPrefixes.rows) {
@@ -136,7 +136,7 @@ async function listPrefixes(req, res, next) {
       left outer join sites s on ns.site_uuid = s.uuid
       left outer join vrfs v on ns.vrf_uuid = v.uuid
       left outer join vlans l on ns.vlan_uuid = l.uuid
-      WHERE ns.orgid = $1 ORDER BY ns.prefix`, [req.orgid])).rows;
+      WHERE ns.orgid = $1 AND ns.deleted_at IS NULL ORDER BY ns.prefix`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -152,7 +152,7 @@ async function getPrefix(req, res, next) {
       left outer join sites s on ns.site_uuid = s.uuid
       left outer join vrfs v on ns.vrf_uuid = v.uuid
       left outer join vlans l on ns.vlan_uuid = l.uuid
-      WHERE ns.orgid = $1 AND ns.uuid = $2 ORDER BY ns.prefix`, [req.orgid, req.params.id])).rows;
+      WHERE ns.orgid = $1 AND ns.uuid = $2 AND ns.deleted_at IS NULL ORDER BY ns.prefix`, [req.orgid, req.params.id])).rows;
     if (rows.length === 0) {
       return res.status(404).json({ error: 'not found' });
     }
@@ -165,7 +165,7 @@ async function updatePrefix(req, res, next) {
     const id = req.params.id;
     const payload = req.body || {};
     
-    const getRes = await db.query('SELECT * FROM networks WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
@@ -229,18 +229,18 @@ async function deletePrefix(req, res, next) {
   try {
     const id = req.params.id;
 
-    const activeIps = await db.query(`SELECT * FROM ips WHERE subnets_uuid in ( select uuid from subnets where networks_uuid = $1) 
-      AND orgid = $2 AND status != 'disabled' `, [id, req.orgid]);
+    const activeIps = await db.query(`SELECT * FROM ips WHERE subnets_uuid IN (SELECT uuid FROM subnets WHERE networks_uuid = $1 AND deleted_at IS NULL)
+      AND orgid = $2 AND status != 'disabled' AND deleted_at IS NULL`, [id, req.orgid]);
     if (activeIps.rows.length !== 0) {
       return res.status(404).json({ error: 'Cannot delete: This network is currently in use by one or more active IP addresses.' });
     }
 
-    const getRes = await db.query('SELECT * FROM networks WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    
-    await db.query('DELETE FROM networks WHERE uuid = $1', [id]);
+
+    await db.query('UPDATE networks SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Prefix deletion
     await logActivity({
@@ -271,7 +271,7 @@ async function autoGenerateIPsForSubnet(subnetId, subnetCidr, orgid, userId) {
     
     // Get all existing IPs in this subnet
     const existingIPs = await db.query(
-      'SELECT ip::text as ip FROM ips WHERE subnets_uuid = $1 AND orgid = $2',
+      'SELECT ip::text as ip FROM ips WHERE subnets_uuid = $1 AND orgid = $2 AND deleted_at IS NULL',
       [subnetId, orgid]
     );
     
@@ -356,7 +356,7 @@ async function createSubnet(req, res, next) {
     const p = req.body || {};
     
     // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
     if (prefixRes.rows.length === 0) {
       return res.status(404).json({ error: 'prefix not found' });
     }
@@ -385,7 +385,7 @@ async function createSubnet(req, res, next) {
 
     // Check if subnet already exists in the database for this org
     const existingSubnet = await db.query(
-      'SELECT * FROM subnets WHERE subnet = $1 AND orgid = $2',
+      'SELECT * FROM subnets WHERE subnet = $1 AND orgid = $2 AND deleted_at IS NULL',
       [p.subnet, req.orgid]
     );
     if (existingSubnet.rows.length > 0) {
@@ -394,7 +394,7 @@ async function createSubnet(req, res, next) {
 
     // Check for overlapping subnets in the database for this org
     const allSubnets = await db.query(
-      'SELECT subnet FROM subnets WHERE orgid = $1',
+      'SELECT subnet FROM subnets WHERE orgid = $1 AND deleted_at IS NULL',
       [req.orgid]
     );
     for (const existing of allSubnets.rows) {
@@ -407,7 +407,7 @@ async function createSubnet(req, res, next) {
 
     // Check if subnet overlaps with any other prefixes in the org (except its parent)
     const allPrefixes = await db.query(
-      'SELECT prefix FROM networks WHERE orgid = $1 AND uuid != $2',
+      'SELECT prefix FROM networks WHERE orgid = $1 AND uuid != $2 AND deleted_at IS NULL',
       [req.orgid, prefixId]
     );
     for (const existingPrefix of allPrefixes.rows) {
@@ -462,7 +462,7 @@ async function listSubnets(req, res, next) {
     const prefixId = req.params.id;
     
     // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
     if (prefixRes.rows.length === 0) {
       return res.status(404).json({ error: 'prefix not found' });
     }
@@ -477,7 +477,7 @@ async function listSubnets(req, res, next) {
       left outer join sites s on ns.site_uuid = s.uuid
       left outer join vrfs v on ns.vrf_uuid = v.uuid
       left outer join vlans l on ns.vlan_uuid = l.uuid
-      WHERE ns.networks_uuid = $1 AND ns.orgid = $2 ORDER BY ns.subnet`,
+      WHERE ns.networks_uuid = $1 AND ns.orgid = $2 AND ns.deleted_at IS NULL ORDER BY ns.subnet`,
       [prefixId, req.orgid]
     )).rows;
     res.json({ items: rows });
@@ -491,14 +491,14 @@ async function updateSubnet(req, res, next) {
     const payload = req.body || {};
     
     // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
     if (prefixRes.rows.length === 0) {
       return res.status(404).json({ error: 'prefix not found' });
     }
     // const prefix = prefixRes.rows[0];
 
     // Get subnet
-    const getRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2', [subnetId, prefixId]);
+    const getRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND deleted_at IS NULL', [subnetId, prefixId]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'subnet not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
@@ -580,23 +580,23 @@ async function deleteSubnet(req, res, next) {
     const prefixId = req.params.id;
     const subnetId = req.params.subnetId;
 
-    const activeIps = await db.query(`SELECT * FROM ips WHERE subnets_uuid = $1 AND orgid = $2 AND status != 'disabled' `, [subnetId, req.orgid]);
+    const activeIps = await db.query(`SELECT * FROM ips WHERE subnets_uuid = $1 AND orgid = $2 AND status != 'disabled' AND deleted_at IS NULL`, [subnetId, req.orgid]);
     if (activeIps.rows.length !== 0) {
       return res.status(404).json({ error: 'Cannot delete: This subnet is currently in use by one or more active IP addresses.' });
     }
     
     // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
     if (prefixRes.rows.length === 0) {
       return res.status(404).json({ error: 'prefix not found' });
     }
 
-    const getRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2', [subnetId, prefixId]);
+    const getRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND deleted_at IS NULL', [subnetId, prefixId]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'subnet not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     
-    await db.query('DELETE FROM subnets WHERE uuid = $1', [subnetId]);
+    await db.query('UPDATE subnets SET deleted_at = NOW() WHERE uuid = $1', [subnetId]);
     
     // Log Subnet deletion
     await logActivity({
@@ -625,7 +625,7 @@ async function deleteSubnet(req, res, next) {
 //     const p = req.body || {};
     
 //     // Verify prefix exists and belongs to org
-//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
 //     if (prefixRes.rows.length === 0) {
 //       return res.status(404).json({ error: 'prefix not found' });
 //     }
@@ -769,7 +769,7 @@ async function deleteSubnet(req, res, next) {
 //     const p = req.body || {};
     
 //     // Verify prefix exists and belongs to org
-//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
 //     if (prefixRes.rows.length === 0) {
 //       return res.status(404).json({ error: 'prefix not found' });
 //     }
@@ -886,13 +886,13 @@ async function listIPs(req, res, next) {
     const subnetId = req.params.subnetId;
     
     // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
     if (prefixRes.rows.length === 0) {
       return res.status(404).json({ error: 'prefix not found' });
     }
 
     // Verify subnet exists and belongs to prefix
-    const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
+    const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3 AND deleted_at IS NULL', [subnetId, prefixId, req.orgid]);
     if (subnetRes.rows.length === 0) {
       return res.status(404).json({ error: 'subnet not found' });
     }
@@ -906,7 +906,7 @@ async function listIPs(req, res, next) {
       FROM ips 
       left outer join vrfs v on ips.vrf_uuid = v.uuid
       left outer join vlans l on ips.vlan_uuid = l.uuid
-      WHERE ips.subnets_uuid = $1 AND ips.orgid = $2 ORDER BY ips.ip`,
+      WHERE ips.subnets_uuid = $1 AND ips.orgid = $2 AND ips.deleted_at IS NULL ORDER BY ips.ip`,
       [subnetId, req.orgid]
     )).rows;
     res.json({ items: rows });
@@ -921,20 +921,20 @@ async function updateIP(req, res, next) {
     const payload = req.body || {};
     
     // Verify prefix exists and belongs to org
-    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+    const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
     if (prefixRes.rows.length === 0) {
       return res.status(404).json({ error: 'prefix not found' });
     }
 
     // Verify subnet exists and belongs to prefix
-    const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3', [subnetId, prefixId, req.orgid]);
+    const subnetRes = await db.query('SELECT * FROM subnets WHERE uuid = $1 AND networks_uuid = $2 AND orgid = $3 AND deleted_at IS NULL', [subnetId, prefixId, req.orgid]);
     if (subnetRes.rows.length === 0) {
       return res.status(404).json({ error: 'subnet not found' });
     }
     const subnet = subnetRes.rows[0];
 
     // Get IP
-    const getRes = await db.query('SELECT * FROM ips WHERE uuid = $1 AND subnets_uuid = $2', [ipId, subnetId]);
+    const getRes = await db.query('SELECT * FROM ips WHERE uuid = $1 AND subnets_uuid = $2 AND deleted_at IS NULL', [ipId, subnetId]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'IP not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
@@ -1017,7 +1017,7 @@ async function updateIP(req, res, next) {
 //     const ipId = req.params.ipId;
     
 //     // Verify prefix exists and belongs to org
-//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2', [prefixId, req.orgid]);
+//     const prefixRes = await db.query('SELECT * FROM networks WHERE uuid = $1 AND orgid = $2 AND deleted_at IS NULL', [prefixId, req.orgid]);
 //     if (prefixRes.rows.length === 0) {
 //       return res.status(404).json({ error: 'prefix not found' });
 //     }

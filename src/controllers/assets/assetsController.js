@@ -106,7 +106,7 @@ async function listAssets(req, res, next) {
       LEFT JOIN sites s ON a.site_uuid = s.uuid
       LEFT JOIN manufacturers m ON a.manufacturer_uuid = m.uuid
       LEFT JOIN purchase_orders po ON a.purchase_order_uuid = po.uuid
-      WHERE a.orgid = $1
+      WHERE a.orgid = $1 AND a.deleted_at IS NULL
       ORDER BY a.asset_id`;
     
     const rows = (await db.query(sql, [req.orgid])).rows;
@@ -133,7 +133,7 @@ async function getAsset(req, res, next) {
       LEFT JOIN sites s ON a.site_uuid = s.uuid
       LEFT JOIN manufacturers m ON a.manufacturer_uuid = m.uuid
       LEFT JOIN purchase_orders po ON a.purchase_order_uuid = po.uuid
-      WHERE a.orgid = $1 AND a.uuid = $2`;
+      WHERE a.orgid = $1 AND a.uuid = $2 AND a.deleted_at IS NULL`;
     
     const rows = (await db.query(sql, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
@@ -150,11 +150,11 @@ async function updateAsset(req, res, next) {
     const payload = req.body || {};
     
     // Fetch existing asset
-    const getRes = await db.query('SELECT * FROM assets WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM assets WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'Asset not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'Organization mismatch' });
-    
+
     // Handle document replacement if new file provided
     if (req.file) {
       // Delete old document if exists
@@ -203,21 +203,13 @@ async function deleteAsset(req, res, next) {
     const id = req.params.id;
     
     // Fetch asset to verify ownership and get details for logging
-    const getRes = await db.query('SELECT * FROM assets WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM assets WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0];
     if (!row) return res.status(404).json({ error: 'Asset not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'Organization mismatch' });
-    
-    // Delete document and QR code from storage if they exist
-    if (row.document_url) {
-      await deleteFile(row.document_url);
-    }
-    if (row.qr_code_url) {
-      await deleteFile(row.qr_code_url);
-    }
-    
-    // Delete asset
-    await db.query('DELETE FROM assets WHERE uuid = $1', [id]);
+
+    // Soft delete — preserve files in storage for recovery
+    await db.query('UPDATE assets SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Asset deletion
     await logActivity({

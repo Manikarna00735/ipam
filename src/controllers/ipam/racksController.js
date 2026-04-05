@@ -64,7 +64,7 @@ async function listRacks(req, res, next) {
     left join sites s on r.site_uuid = s.uuid
     left join locations l on r.location_uuid = l.uuid 
     left join devices d on r.uuid = d.rack_uuid
-    WHERE r.orgid = $1 
+    WHERE r.orgid = $1 AND r.deleted_at IS NULL
     group by r.uuid, s.uuid, l.uuid
     ORDER BY r.name`, [req.orgid])).rows;
     // const rows = (await db.query(`SELECT * FROM racks WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
@@ -84,7 +84,7 @@ async function getRack(req, res, next) {
     left join sites s on r.site_uuid = s.uuid
     left join locations l on r.location_uuid = l.uuid 
     left join devices d on r.uuid = d.rack_uuid
-    WHERE r.orgid = $1 and r.uuid = $2
+    WHERE r.orgid = $1 AND r.uuid = $2 AND r.deleted_at IS NULL
     group by r.uuid, s.uuid, l.uuid
     ORDER BY r.name`, [req.orgid, req.params.id])).rows;
     // const rows = (await db.query(`SELECT * FROM racks WHERE orgid = $1 and uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
@@ -96,7 +96,7 @@ async function updateRack(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM racks WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM racks WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k,i)=>`${k}=$${i+1}`).join(', ');
@@ -127,10 +127,10 @@ async function updateRack(req, res, next) {
 async function deleteRack(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM racks WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM racks WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM racks WHERE uuid = $1', [id]);
+    await db.query('UPDATE racks SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Rack deletion
     await logActivity({

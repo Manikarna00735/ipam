@@ -67,7 +67,7 @@ async function listInterfaces(req, res, next) {
     //   left JOIN devices d ON f.device_uuid = d.uuid
     //   left JOIN vrfs v ON f.vrf_uuid = v.uuid
     //   WHERE f.orgid = $1 ORDER BY f.name`, [req.orgid])).rows;
-    const rows = (await db.query(`SELECT * FROM interfaces WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
+    const rows = (await db.query(`SELECT * FROM interfaces WHERE orgid = $1 AND deleted_at IS NULL ORDER BY name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -84,7 +84,7 @@ async function getInterface(req, res, next) {
     //   left JOIN devices d ON f.device_uuid = d.uuid
     //   left JOIN vrfs v ON f.vrf_uuid = v.uuid
     //   WHERE f.orgid = $1 and f.uuid = $2 ORDER BY f.name`, [req.orgid, req.params.id])).rows;
-    const rows = (await db.query(`SELECT * FROM interfaces WHERE orgid = $1 AND uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
+    const rows = (await db.query(`SELECT * FROM interfaces WHERE orgid = $1 AND uuid = $2 AND deleted_at IS NULL ORDER BY name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -93,7 +93,7 @@ async function updateInterface(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM interfaces WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM interfaces WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k,i)=>`${k}=$${i+1}`).join(', ');
@@ -124,10 +124,10 @@ async function updateInterface(req, res, next) {
 async function deleteInterface(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM interfaces WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM interfaces WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM interfaces WHERE uuid = $1', [id]);
+    await db.query('UPDATE interfaces SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Interface deletion
     await logActivity({

@@ -45,7 +45,7 @@ async function createVendor(req, res, next) {
 async function listVendors(req, res, next) {
   try {
     const rows = (await db.query(
-      `SELECT * FROM vendors WHERE orgid = $1 ORDER BY name`,
+      `SELECT * FROM vendors WHERE orgid = $1 AND deleted_at IS NULL ORDER BY name`,
       [req.orgid]
     )).rows;
     res.json({ items: rows });
@@ -55,7 +55,7 @@ async function listVendors(req, res, next) {
 async function getVendor(req, res, next) {
   try {
     const rows = (await db.query(
-      `SELECT * FROM vendors WHERE orgid = $1 AND uuid = $2`,
+      `SELECT * FROM vendors WHERE orgid = $1 AND uuid = $2 AND deleted_at IS NULL`,
       [req.orgid, req.params.id]
     )).rows;
     res.json({ items: rows });
@@ -66,7 +66,7 @@ async function updateVendor(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM vendors WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM vendors WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k, i) => `${k}=$${i + 1}`).join(', ');
@@ -97,10 +97,10 @@ async function updateVendor(req, res, next) {
 async function deleteVendor(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM vendors WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM vendors WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM vendors WHERE uuid = $1', [id]);
+    await db.query('UPDATE vendors SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Vendor deletion
     await logActivity({

@@ -59,7 +59,7 @@ async function listContracts(req, res, next) {
         jsonb_build_object('name', v.name, 'uuid', v.uuid) as vendor_uuid
         FROM contracts c
         LEFT JOIN vendors v ON c.vendor_uuid = v.uuid
-        WHERE c.orgid = $1 ORDER BY c.contract_name`,
+        WHERE c.orgid = $1 AND c.deleted_at IS NULL ORDER BY c.contract_name`,
       [req.orgid]
     )).rows;
     res.json({ items: rows });
@@ -76,7 +76,7 @@ async function getContract(req, res, next) {
         jsonb_build_object('name', v.name, 'uuid', v.uuid) as vendor_uuid
         FROM contracts c
         LEFT JOIN vendors v ON c.vendor_uuid = v.uuid
-        WHERE c.orgid = $1 AND c.uuid = $2`,
+        WHERE c.orgid = $1 AND c.uuid = $2 AND c.deleted_at IS NULL`,
       [req.orgid, req.params.id]
     )).rows;
     res.json({ items: rows });
@@ -87,7 +87,7 @@ async function updateContract(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM contracts WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM contracts WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k, i) => `${k}=$${i + 1}`).join(', ');
@@ -118,10 +118,10 @@ async function updateContract(req, res, next) {
 async function deleteContract(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM contracts WHERE uuid = $1', [id]);
+    const getRes = await db.query('SELECT * FROM contracts WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM contracts WHERE uuid = $1', [id]);
+    await db.query('UPDATE contracts SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Contract deletion
     await logActivity({

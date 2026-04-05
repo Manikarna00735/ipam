@@ -37,7 +37,7 @@ async function listCircuits(req, res, next) {
       c.createdat, c.updatedat
       FROM circuits c
       left JOIN providers p ON c.provider_uuid = p.uuid
-      WHERE c.orgid = $1 ORDER BY c.uuid`, [req.orgid])).rows;
+      WHERE c.orgid = $1 AND c.deleted_at IS NULL ORDER BY c.uuid`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -49,7 +49,7 @@ async function getCircuit(req, res, next) {
       c.createdat, c.updatedat
       FROM circuits c
       left JOIN providers p ON c.provider_uuid = p.uuid
-      WHERE c.orgid = $1 and c.uuid = $2 ORDER BY c.uuid`, [req.orgid, req.params.id])).rows;
+      WHERE c.orgid = $1 AND c.uuid = $2 AND c.deleted_at IS NULL ORDER BY c.uuid`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -58,7 +58,7 @@ async function updateCircuit(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM circuits WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM circuits WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k,i)=>`${k}=$${i+1}`).join(', ');
@@ -89,10 +89,10 @@ async function updateCircuit(req, res, next) {
 async function deleteCircuit(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM circuits WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM circuits WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM circuits WHERE uuid = $1', [id]);
+    await db.query('UPDATE circuits SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Circuit deletion
     await logActivity({

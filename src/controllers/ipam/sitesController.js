@@ -51,7 +51,7 @@ async function listSites(req, res, next) {
       FROM sites s
       left join locations l on s.location_uuid = l.uuid
       left join regions r on s.region_uuid = r.uuid
-      WHERE s.orgid = $1 ORDER BY s.name`, [req.orgid])).rows;
+      WHERE s.orgid = $1 AND s.deleted_at IS NULL ORDER BY s.name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -65,7 +65,7 @@ async function getSite(req, res, next) {
       FROM sites s
       left join locations l on s.location_uuid = l.uuid
       left join regions r on s.region_uuid = r.uuid
-      WHERE s.orgid = $1 and s.uuid = $2 ORDER BY s.name`, [req.orgid, req.params.id])).rows;
+      WHERE s.orgid = $1 AND s.uuid = $2 AND s.deleted_at IS NULL ORDER BY s.name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
 }
@@ -74,7 +74,7 @@ async function updateSite(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM sites WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM sites WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if ((row.orgid || row.org_id) !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
 
@@ -113,10 +113,10 @@ async function updateSite(req, res, next) {
 async function deleteSite(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM sites WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM sites WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if ((row.orgid || row.org_id) !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM sites WHERE uuid = $1', [id]);
+    await db.query('UPDATE sites SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Site deletion
     await logActivity({

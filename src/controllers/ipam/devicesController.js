@@ -54,7 +54,7 @@ async function listDevices(req, res, next) {
       left join platforms p on d.platform_uuid = p.uuid
       left join racks r on d.rack_uuid = r.uuid
       left join locations l on d.location_uuid = l.uuid
-      WHERE d.orgid = $1 ORDER BY d.name`, [req.orgid])).rows;
+      WHERE d.orgid = $1 AND d.deleted_at IS NULL ORDER BY d.name`, [req.orgid])).rows;
     // const rows = (await db.query(`SELECT * FROM devices WHERE orgid = $1 ORDER BY name`, [req.orgid])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
@@ -77,7 +77,7 @@ async function getDevice(req, res, next) {
       left join platforms p on d.platform_uuid = p.uuid
       left join racks r on d.rack_uuid = r.uuid
       left join locations l on d.location_uuid = l.uuid
-      WHERE d.orgid = $1 and d.uuid = $2 ORDER BY d.name`, [req.orgid, req.params.id])).rows;
+      WHERE d.orgid = $1 AND d.uuid = $2 AND d.deleted_at IS NULL ORDER BY d.name`, [req.orgid, req.params.id])).rows;
     // const rows = (await db.query(`SELECT * FROM devices WHERE orgid = $1 and uuid = $2 ORDER BY name`, [req.orgid, req.params.id])).rows;
     res.json({ items: rows });
   } catch (err) { next(err); }
@@ -87,7 +87,7 @@ async function updateDevice(req, res, next) {
   try {
     const id = req.params.id;
     const payload = req.body || {};
-    const getRes = await db.query('SELECT * FROM devices WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM devices WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
     const setClauses = Object.keys(payload).map((k,i)=>`${k}=$${i+1}`).join(', ');
@@ -118,10 +118,10 @@ async function updateDevice(req, res, next) {
 async function deleteDevice(req, res, next) {
   try {
     const id = req.params.id;
-    const getRes = await db.query('SELECT * FROM devices WHERE uuid = $1 ', [id]);
+    const getRes = await db.query('SELECT * FROM devices WHERE uuid = $1 AND deleted_at IS NULL', [id]);
     const row = getRes.rows[0]; if (!row) return res.status(404).json({ error: 'not found' });
     if (row.orgid !== req.orgid) return res.status(403).json({ error: 'org mismatch' });
-    await db.query('DELETE FROM devices WHERE uuid = $1', [id]);
+    await db.query('UPDATE devices SET deleted_at = NOW() WHERE uuid = $1', [id]);
     
     // Log Device deletion
     await logActivity({

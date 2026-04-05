@@ -8,6 +8,7 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many requests. Please try again later.' },
   keyGenerator: (req) => req.headers['x-org-id'] || req.ip,
+  validate: { keyGeneratorIpFallback: false },
 });
 
 // Write endpoints (POST/PUT/DELETE): 30 requests per minute per org
@@ -18,6 +19,7 @@ const writeLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many write requests. Please try again later.' },
   keyGenerator: (req) => req.headers['x-org-id'] || req.ip,
+  validate: { keyGeneratorIpFallback: false },
 });
 
 // Activity log writes: 200 per minute (fire-and-forget from app)
@@ -28,6 +30,7 @@ const logLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many log requests. Please try again later.' },
   keyGenerator: (req) => req.headers['x-org-id'] || req.ip,
+  validate: { keyGeneratorIpFallback: false },
 });
 
 module.exports = { apiLimiter, writeLimiter, logLimiter };

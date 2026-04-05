@@ -248,15 +248,24 @@ async function queryActivityLogs(req, res, next) {
     }
 
     const whereClause = conditions.join(' AND ');
+    const currentPage = Math.max(page, 1);
 
-    // Count total
-    const countResult = await db.query(
-      `SELECT COUNT(*) AS total FROM activity_logs WHERE ${whereClause}`,
-      params
-    );
-    const totalCount = parseInt(countResult.rows[0].total, 10);
+    // COUNT(*) is expensive at scale — only run it on page 1.
+    // Subsequent pages skip the count; clients should cache total_count from
+    // page 1. We detect has_more by fetching one extra row (n+1 trick).
+    // pg_class estimates are not used here because they are table-wide and
+    // ignore org/filter scoping, making them useless for multi-tenant queries.
+    let totalCount = null;
+    if (currentPage === 1) {
+      const countResult = await db.query(
+        `SELECT COUNT(*) AS total FROM activity_logs WHERE ${whereClause}`,
+        params
+      );
+      totalCount = parseInt(countResult.rows[0].total, 10);
+    }
 
-    // Fetch page
+    // Fetch one extra row to detect whether a next page exists
+    const fetchLimit = safePageSize + 1;
     const dataQuery = `
       SELECT
         event_id, timestamp, orgid, org_name,
@@ -272,15 +281,19 @@ async function queryActivityLogs(req, res, next) {
       ORDER BY timestamp DESC
       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
     `;
-    params.push(safePageSize, offset);
+    params.push(fetchLimit, offset);
 
     const dataResult = await db.query(dataQuery, params);
 
+    const hasMore = dataResult.rows.length > safePageSize;
+    const items = hasMore ? dataResult.rows.slice(0, safePageSize) : dataResult.rows;
+
     return res.status(200).json({
-      items: dataResult.rows,
+      items,
       total_count: totalCount,
-      page: Math.max(page, 1),
-      page_size: safePageSize
+      page: currentPage,
+      page_size: safePageSize,
+      has_more: hasMore,
     });
 
   } catch (err) {
