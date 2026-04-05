@@ -6,6 +6,8 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const pinoHttp = require('pino-http');
 const timeout = require('connect-timeout');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 const logger = require('./utils/logger');
 const ipamRoutes = require('./routes/ipam/ipam');
 const providers = require('./routes/ipam/providers');
@@ -107,6 +109,12 @@ const io = new Server(server, {
   },
 });
 realtime.setIo(io);
+
+// API docs — served only in non-production to avoid exposing internals
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
+}
 
 // Health check — unauthenticated, no rate limit; used by Render for uptime monitoring
 app.get('/health', async (_req, res) => {
